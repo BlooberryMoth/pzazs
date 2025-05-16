@@ -1,0 +1,4 @@
+discord.py
+discord.oauth2
+python-dateutil
+pytz

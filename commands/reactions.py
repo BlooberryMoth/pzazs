@@ -10,16 +10,14 @@ usage = []
 async def handle(message: discord.Message, args: list=None, c: cmds.Context=None):
     if not await check_permission(message, permission, c): raise PermissionError
 
-    guild = message.guild
-    author = message.author
+    response = await reply("> Loading...", m=message, c=c)
 
     try:
-        with open(f'./reactions/{author.id}.json') as fileIn: reactions = json.load(fileIn)
+        with open(f'./reactions/{message.author.id}.json') as fileIn: reactions = json.load(fileIn)
     except: reactions = []
 
-    embed = get_reaction(author, reactions, 0)
-        
-    return await reply("", [embed], DefaultMenu(original_author=message.author, reactions=reactions, pos=0), m=message, c=c)
+    view = MessageReactionsMenu(message.author, reactions, response)
+    await response.edit(content="", embeds=[view.get_embed()], view=view)
 
 
 @Client.hybrid_command()
@@ -36,34 +34,40 @@ async def reactions(ctx: cmds.Context):
     except PermissionError: return
 
 
-class DefaultMenu(discord.ui.View):
-    def __init__(self, original_author: discord.Member, reactions: list, pos: int, timeout = 60.0):
-        super().__init__(timeout=timeout)
+class MessageReactionsMenu(discord.ui.View):
+    def __init__(self, original_author: discord.Member, reactions: list, message: discord.Message):
+        super().__init__(timeout=60.0)
 
         self.original_author = original_author
         self.reactions = reactions
-        self.pos = 0
+        self.message = message
 
-        self.move_position(pos)
+        self.position = 0
+        self.move_position(0)
+    
         
     @discord.ui.button(custom_id="prev", style=discord.ButtonStyle.gray, emoji='◀️')
     async def prev(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user != self.original_author: return
+
         self.move_position(-1)
-        await interaction.response.edit_message(embeds=[get_reaction(self.original_author, self.reactions, self.pos)], view=self)
+        await interaction.response.edit_message(embeds=[self.get_embed()], view=self)
 
     @discord.ui.button(custom_id="remove", style=discord.ButtonStyle.gray, emoji="➖")
     async def remove(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user != self.original_author: return
-        self.reactions.pop(self.pos)
+
+        self.reactions.pop(self.position)
         with open(f'./reactions/{self.original_author.id}.json', 'w') as fileOut: fileOut.write(json.dumps(self.reactions, indent=4))
+
         self.move_position(-1)
-        await interaction.response.edit_message(embeds=[get_reaction(self.original_author, self.reactions, self.pos)], view=self)
+        await interaction.response.edit_message(embeds=[self.get_embed()], view=self)
 
     @discord.ui.button(custom_id="edit", style=discord.ButtonStyle.gray, emoji='*️⃣')
     async def edit(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user != self.original_author: return
-        await interaction.response.send_modal(RequirementsModal(original_author=self.original_author, response=interaction.message, reactions=self.reactions, pos=self.pos))
+
+        await interaction.response.send_modal(RequirementsModal(self))
 
     @discord.ui.button(custom_id="add", style=discord.ButtonStyle.gray, emoji='➕')
     async def add(self, interaction: discord.Interaction, button: discord.Button):
@@ -75,11 +79,13 @@ class DefaultMenu(discord.ui.View):
                               title="React to this message with the emoji you want to use",
                               description="(PZazS has to have access to this emoji for this to work.)") \
         .set_footer(text="Closing prompt in 60s")
-        dialogue = await interaction.message.edit(content="", embeds=[embed])
+        await interaction.message.edit(content="", embeds=[embed])
         try: reaction, _ = await Client.wait_for('reaction_add',
                                                  check=lambda x, y: y == self.original_author,
                                                  timeout=60.0)
-        except TimeoutError: return await dialogue.edit(content="> Timed out; Closing dialogue.", embeds=[])
+        except TimeoutError: return await interaction.message.edit(content="> Timed out; Closing dialogue.", embeds=[])
+
+        await interaction.message.clear_reactions()
 
         newReaction = {
             "emoji": None,
@@ -94,43 +100,80 @@ class DefaultMenu(discord.ui.View):
                 "isExactly": []
             }
         }
-
         try: newReaction['emojiID'] = reaction.emoji.id
         except: newReaction['emoji'] = reaction.emoji
-
         self.reactions.append(newReaction)
-        await interaction.message.clear_reactions()
 
         with open(f'./reactions/{self.original_author.id}.json', 'w') as fileOut: fileOut.write(json.dumps(self.reactions, indent=4))
-        self.move_position(-self.pos)
+
+        self.move_position(-self.position)
         self.move_position(len(self.reactions)-1)
-        return await interaction.message.edit(embeds=[get_reaction(self.original_author, self.reactions, len(self.reactions)-1)], view=self)
+        await interaction.message.edit(embeds=[self.get_embed()], view=self)
 
     @discord.ui.button(custom_id="next", style=discord.ButtonStyle.gray, emoji='▶️')
     async def next(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user != self.original_author: return
-        self.move_position(1)
-        await interaction.response.edit_message(embeds=[get_reaction(self.original_author, self.reactions, self.pos)], view=DefaultMenu(self.original_author, self.reactions, self.pos))
 
-    def move_position(self, pos: int):
-        self.pos = max(0, self.pos+pos)
-        self.children[0].disabled = not self.pos
-        self.children[1].disabled = self.children[2].disabled = not len(self.reactions)
-        self.children[3].disabled = len(self.reactions) >= 10
-        self.children[4].disabled = self.pos + 1 >= len(self.reactions)
+        self.move_position(1)
+        await interaction.response.edit_message(embeds=[self.get_embed()], view=self)
+
+
+    def move_position(self, dposition: int) -> None:
+        self.position        = max(0, self.position+dposition)
+        self.prev.disabled   = not self.position
+        self.remove.disabled = self.edit.disabled   = not len(self.reactions)
+        self.add.disabled    = len(self.reactions) >= 10
+        self.next.disabled   = self.position + 1   >= len(self.reactions)
+
+    def get_embed(self) -> discord.Embed:
+        embed = discord.Embed(color=0x69a9d9,
+                              title=f"Reaction __{self.position + 1}__ of {len(self.reactions)}")
+        embed.set_author(name=f"{self.original_author}'s reactions", icon_url=self.original_author.avatar.url)
+        embed.set_footer(text="Closing prompt in 60s")
+        if len(self.reactions):
+            requirements = self.reactions[self.position]['message']
+
+            contains  = ('"' + '\" \"'.join(requirements['contains']) + '"') if len(requirements['contains']) else ""
+            excludes  = ('"' + '\" \"'.join(requirements['excludes']) + '"') if len(requirements['excludes']) else ""
+            isExactly = ('"' + '\" \"'.join(requirements['isExactly']) + '"') if len(requirements['isExactly']) else ""
+
+            try:
+                emoji = Client.get_emoji(self.reactions[self.position]['emojiID'])
+                
+                embed.set_thumbnail(url=emoji.url)
+                embed.add_field(name="Type:", value="Custom")
+                embed.add_field(name="Name:", value=emoji.name)
+                embed.add_field(name="From:", value=emoji.guild.name)
+            except:
+                emoji = self.reactions[self.position]['emoji']
+
+                embed.add_field(name="Type:", value="Default")
+                embed.add_field(name="Name:", value=emoji)
+                embed.add_field(name="From:", value="Unicode Consortium")
+
+            embed.add_field(name="Will add reaction if the message", value="", inline=False)
+            embed.add_field(name="Contains:",              value=contains,  inline=False)
+            embed.add_field(name="And, does not contain:", value=excludes,  inline=False)
+            embed.add_field(name="Or, is exactly:",        value=isExactly, inline=False)
+
+            return embed
+        else:
+            embed.title = "Reaction __0__ of 0"
+            embed.add_field(name="Press ➕ to add a reaction", value="")
+
+            return embed
+
+    async def on_timeout(self) -> None:
+        await self.message.edit(content="> Timed out.", embeds=[], view=None)
 
 
 class RequirementsModal(discord.ui.Modal):
-    def __init__(self, *, original_author: discord.Member, response: discord.Message, reactions: list, pos: int, title = "Message requirements for this reaction", timeout = None, custom_id = "requirements"):
-        super().__init__(title=title, timeout=timeout, custom_id=custom_id)
+    def __init__(self, view: MessageReactionsMenu):
+        super().__init__(title="Message requirements for this reaction", custom_id="requirements")
 
-        self.original_author = original_author
-        self.response = response
-        self.pos = pos
-        self.reactions = reactions
+        self.view = view
 
-        requirements = reactions[pos]['message']
-
+        requirements = self.view.reactions[self.view.position]['message']
         contains  = ('"' + '\" \"'.join(requirements['contains']) + '"') if len(requirements['contains']) else ""
         excludes  = ('"' + '\" \"'.join(requirements['excludes']) + '"') if len(requirements['excludes']) else ""
         isExactly = ('"' + '\" \"'.join(requirements['isExactly']) + '"') if len(requirements['isExactly']) else ""
@@ -140,49 +183,14 @@ class RequirementsModal(discord.ui.Modal):
         self.add_item(discord.ui.TextInput(label="Message is exactly:", placeholder="Format: \"text 1\" \"text 2\"", default=isExactly, required=False))
 
     async def on_submit(self, interaction: discord.Interaction):
-        self.reactions[self.pos]['message']['contains'] = [snip.replace('"', "") for snip in self.children[0].value.split('" "')] if len(self.children[0].value) else []
-        self.reactions[self.pos]['message']['excludes'] = [snip.replace('"', "") for snip in self.children[1].value.split('" "')] if len(self.children[1].value) else []
-        self.reactions[self.pos]['message']['isExactly'] = [snip.replace('"', "") for snip in self.children[2].value.split('" "')] if len(self.children[2].value) else []
+        self.view.reactions[self.view.position]['message']['contains'] = [snip.replace('"', "") for snip in self.children[0].value.split('" "')] if len(self.children[0].value) else []
+        self.view.reactions[self.view.position]['message']['excludes'] = [snip.replace('"', "") for snip in self.children[1].value.split('" "')] if len(self.children[1].value) else []
+        self.view.reactions[self.view.position]['message']['isExactly'] = [snip.replace('"', "") for snip in self.children[2].value.split('" "')] if len(self.children[2].value) else []
 
-        with open(f'./reactions/{interaction.user.id}.json', 'w') as fileOut: fileOut.write(json.dumps(self.reactions, indent=4))
-        await self.response.edit(embeds=[get_reaction(interaction.user, self.reactions, self.pos)], view=DefaultMenu(original_author=self.original_author, reactions=self.reactions, pos=self.pos))
+        with open(f'./reactions/{interaction.user.id}.json', 'w') as fileOut: fileOut.write(json.dumps(self.view.reactions, indent=4))
+
+        view = MessageReactionsMenu(self.view.original_author, self.view.reactions, self.view.message)
+        view.move_position(self.view.position)
+
+        await self.view.message.edit(content="", embeds=[view.get_embed()], view=view)
         await interaction.response.defer()
-
-
-def get_reaction(user: discord.Member, reactions: list | None, pos: int) -> discord.Embed:
-    embed = discord.Embed(color=0x69a9d9,
-                          title=f"Reaction __{pos + 1}__ of {len(reactions)}")
-    embed.set_author(name=f"{user}'s reactions", icon_url=user.avatar.url)
-    embed.set_footer(text="Closing prompt in 60s")
-    if len(reactions):
-        requirements = reactions[pos]['message']
-
-        contains  = ('"' + '\" \"'.join(requirements['contains']) + '"') if len(requirements['contains']) else ""
-        excludes  = ('"' + '\" \"'.join(requirements['excludes']) + '"') if len(requirements['excludes']) else ""
-        isExactly = ('"' + '\" \"'.join(requirements['isExactly']) + '"') if len(requirements['isExactly']) else ""
-
-        try:
-            emoji = Client.get_emoji(reactions[pos]['emojiID'])
-            
-            embed.set_thumbnail(url=emoji.url)
-            embed.add_field(name="Type:", value="Custom")
-            embed.add_field(name="Name:", value=emoji.name)
-            embed.add_field(name="From:", value=emoji.guild.name)
-        except:
-            emoji = reactions[pos]['emoji']
-
-            embed.add_field(name="Type:", value="Default")
-            embed.add_field(name="Name:", value=emoji)
-            embed.add_field(name="From:", value="Unicode Consortium")
-
-        embed.add_field(name="Will add reaction if the message", value="", inline=False)
-        embed.add_field(name="Contains:",              value=contains,  inline=False)
-        embed.add_field(name="And, does not contain:", value=excludes,  inline=False)
-        embed.add_field(name="Or, is exactly:",        value=isExactly, inline=False)
-
-        return embed
-    else:
-        embed.title = "Reaction __0__ of 0"
-        embed.add_field(name="Press ➕ to add a reaction", value="")
-
-        return embed

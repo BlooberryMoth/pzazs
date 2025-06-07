@@ -1,4 +1,5 @@
 from Global import *
+import requests, re
 
 
 async def handle(ctx: discord.RawReactionActionEvent):
@@ -26,10 +27,24 @@ async def handle(ctx: discord.RawReactionActionEvent):
             reply = await message.channel.fetch_message(message.reference.message_id)
             embed.add_field(name=f"Replying to __{reply.author.name}__:", value=reply.content, inline=False)
 
-        if message.content: embed.add_field(name=f"__{message.author.name}__:", value=f"{message.content}")
+        if message.content:
+            try:
+                links = [_.group() for _ in re.finditer("(http)\S*(\s|)", message.content.lower())]
+                for link in links[:4]:
+                    if 'tenor.com/view/' in link:
+                        r = requests.get(link)
+                        url = f"https://c.tenor.com/{str(r.content).split('media1.tenor.com/m/')[1].split('/')[0]}/tenor.gif"
+                    else: url = link
+                    embed.set_image(url=url)
+                    embeds.append(embed)
+                    embed = discord.Embed(url="https://pzazs.thatgalblu.com")
+                message.content = "\n".join(message.content.split(link))
+            except: pass
+                
+            embed.add_field(name=f"__{message.author.name}__:", value=f"{message.content}")
 
         if len(message.attachments):
-            i = 0
+            i = len(embeds)
             for attachment in message.attachments:
                 if i > 4: break
                 if 'video' in attachment.content_type: i -= 1

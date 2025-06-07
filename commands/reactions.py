@@ -24,8 +24,8 @@ async def handle(message: discord.Message, args: list=None, c: cmds.Context=None
 
 @Client.hybrid_command()
 async def reactions(ctx: cmds.Context):
-    f"""
-    {description}
+    """
+    Adds an emoji reaction to a message that you send.
     
     Parameters
     ----------
@@ -37,7 +37,7 @@ async def reactions(ctx: cmds.Context):
 
 
 class DefaultMenu(discord.ui.View):
-    def __init__(self, *, original_author: discord.Member, reactions: list, pos: int, timeout = 60.0):
+    def __init__(self, original_author: discord.Member, reactions: list, pos: int, timeout = 60.0):
         super().__init__(timeout=timeout)
 
         self.original_author = original_author
@@ -69,11 +69,13 @@ class DefaultMenu(discord.ui.View):
     async def add(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user != self.original_author: return
 
+        await interaction.response.edit_message(content="> Loading...", embeds=[], view=None)
+
         embed = discord.Embed(color=0x69a9d9,
                               title="React to this message with the emoji you want to use",
                               description="(PZazS has to have access to this emoji for this to work.)") \
         .set_footer(text="Closing prompt in 60s")
-        dialogue = await interaction.message.edit(embeds=[embed], view=None)
+        dialogue = await interaction.message.edit(content="", embeds=[embed])
         try: reaction, _ = await Client.wait_for('reaction_add',
                                                  check=lambda x, y: y == self.original_author,
                                                  timeout=60.0)
@@ -108,15 +110,13 @@ class DefaultMenu(discord.ui.View):
     async def next(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user != self.original_author: return
         self.move_position(1)
-        await interaction.response.edit_message(embeds=[get_reaction(self.original_author, self.reactions, self.pos)], view=self)
+        await interaction.response.edit_message(embeds=[get_reaction(self.original_author, self.reactions, self.pos)], view=DefaultMenu(self.original_author, self.reactions, self.pos))
 
     def move_position(self, pos: int):
-        self.pos = max(0, self.pos + pos)
+        self.pos = max(0, self.pos+pos)
         self.children[0].disabled = not self.pos
-        if not len(self.reactions):
-            self.children[1].disabled = True
-            self.children[2].disabled = True
-        if len(self.reactions) >= 10:  self.children[3].disabled = True
+        self.children[1].disabled = self.children[2].disabled = not len(self.reactions)
+        self.children[3].disabled = len(self.reactions) >= 10
         self.children[4].disabled = self.pos + 1 >= len(self.reactions)
 
 
@@ -153,7 +153,7 @@ def get_reaction(user: discord.Member, reactions: list | None, pos: int) -> disc
     embed = discord.Embed(color=0x69a9d9,
                           title=f"Reaction __{pos + 1}__ of {len(reactions)}")
     embed.set_author(name=f"{user}'s reactions", icon_url=user.avatar.url)
-    embed.set_footer(text=f"Closing prompt in 60s")
+    embed.set_footer(text="Closing prompt in 60s")
     if len(reactions):
         requirements = reactions[pos]['message']
 
@@ -182,7 +182,7 @@ def get_reaction(user: discord.Member, reactions: list | None, pos: int) -> disc
 
         return embed
     else:
-        embed.title = f"Reaction __0__ of 0"
+        embed.title = "Reaction __0__ of 0"
         embed.add_field(name="Press ➕ to add a reaction", value="")
 
         return embed

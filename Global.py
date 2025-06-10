@@ -13,7 +13,7 @@ activityText = fr"in dev mode"
 # Imports, global variables, and methods
 
 import discord, importlib, json, os, threading
-from discord.ext import commands as cmds
+from discord.ext import commands as cmds, tasks
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pytz import timezone as tz
@@ -49,3 +49,34 @@ async def check_permission(message: discord.Message, permission: int=3, ctx: cmd
         if ctx: await ctx.send("You do not have permission to use this command.", ephemeral=True)
         else: await message.reply("You do not have permission to use this command.", allowed_mentions=none, silent=True)
         return False
+    
+
+class CommandScrollMenu(discord.ui.View):
+    def __init__(self, attached_message: discord.Message, original_author: discord.Member, items: list|dict=[]):
+        super().__init__(timeout=None)
+
+        self.attached_message = attached_message
+        self.original_author  = original_author
+        self.items = items
+
+        self.position = 0
+
+        self.timer.start()
+
+    def interact(self, interaction: discord.Interaction):
+        if interaction.user != self.original_author: raise
+        self.timer.restart()
+
+    @tasks.loop(seconds=60.0, count=1)
+    async def timer(self): pass
+    @timer.after_loop
+    async def on_timeout(self):
+        if self.timer.current_loop: await self.attached_message.edit(content="> Timed out; Closing dialogue.", embeds=[], view=None)
+
+    def get_embed(self) -> discord.Embed: ...
+
+
+request_emoji_embed = discord.Embed(color=0x69a9d9,
+                                    title="React to this message with the emoji you want to use",
+                                    description="(PZazS has to have access to this emoji for this to work.)") \
+.set_footer(text="Closing prmopt in 60s")

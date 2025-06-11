@@ -3,16 +3,21 @@ import requests, re
 
 
 async def handle(ctx: discord.RawReactionActionEvent):
-    if ctx.emoji.name != '⭐' or str(ctx.guild_id) not in starboards: return
+    if ctx.emoji.name != '⭐' or not os.path.exists(f'./starboards/{ctx.guild_id}.json'): return
 
-    guild         = Client.get_guild(ctx.guild_id)
-    channel       = guild.get_channel(ctx.channel_id)
-    message       = await channel.fetch_message(ctx.message_id)
-    starboard     = starboards[str(guild.id)]
-    starReactions = [_ for _ in message.reactions if _.emoji == '⭐']
-    if channel.id == starboard['channelID'] or not len(starReactions): return
+    with open(f'./starboards/{ctx.guild_id}.json') as file_in: starboard = json.load(file_in)
+    if ctx.message_id in starboard['messageCache'] or ctx.channel_id == starboard['channelID']: return
 
-    if starReactions[0].count == starboard['minimumReactions']:
+    guild          = Client.get_guild(ctx.guild_id)
+    channel        = guild.get_channel(ctx.channel_id)
+    message        = await channel.fetch_message(ctx.message_id)
+    star_reactions = [_ for _ in message.reactions if _.emoji == '⭐']
+    if not len(star_reactions): return
+
+    if star_reactions[0].count >= starboard['minimumReactions']:
+        starboard['messageCache'] = starboard['messageCache'][-24:] + [message.id]
+        with open(f'./starboards/{ctx.guild_id}.json', 'w') as file_out: file_out.write(json.dumps(starboard, indent=4))
+
         try: channel = guild.get_channel(starboard['channelID'])
         except: return await message.reply(f"Unable to find/access the Starboard channel!", allowed_mentions=none, silent=True)
 

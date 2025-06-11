@@ -4,7 +4,7 @@ from Global import *
 async def handle(message: discord.Message):
     author = message.author
     if not os.path.exists(f'./reactions/{author.id}.json'): return
-    with open(f'./reactions/{author.id}.json') as fileIn: reactions = json.load(fileIn)
+    with open(f'./reactions/{author.id}.json') as file_in: reactions = json.load(file_in)
 
     for react in reactions:
         if True in [_ in message.content.lower() for _ in react['message']['contains']] \

@@ -13,7 +13,7 @@ async def handle(message: discord.Message, args: list=None, c: cmds.Context=None
     response = await reply("> Loading...", m=message, c=c)
 
     try:
-        with open(f'./reactions/{message.author.id}.json') as fileIn: reactions = json.load(fileIn)
+        with open(f'./reactions/{message.author.id}.json') as file_in: reactions = json.load(file_in)
     except: reactions = []
 
     view = MessageReactionsMenu(response, message.author, reactions)
@@ -52,7 +52,7 @@ class MessageReactionsMenu(CommandScrollMenu):
         self.interact(interaction)
 
         self.items.pop(self.position)
-        with open(f'./reactions/{self.original_author.id}.json', 'w') as fileOut: fileOut.write(json.dumps(self.items, indent=4))
+        with open(f'./reactions/{self.original_author.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
 
         self.move_position(-1)
         await interaction.response.edit_message(embeds=[self.get_embed()], view=self)
@@ -93,7 +93,7 @@ class MessageReactionsMenu(CommandScrollMenu):
         except: newReaction['emoji'] = reaction.emoji
         self.items.append(newReaction)
 
-        with open(f'./reactions/{self.original_author.id}.json', 'w') as fileOut: fileOut.write(json.dumps(self.items, indent=4))
+        with open(f'./reactions/{self.original_author.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
 
         self.move_position(-self.position)
         self.move_position(len(self.items)-1)
@@ -173,8 +173,7 @@ class RequirementsModal(discord.ui.Modal):
         self.view.items[self.view.position]['message']['excludes'] = [snip.replace('"', "") for snip in self.children[1].value.split('" "')] if len(self.children[1].value) else []
         self.view.items[self.view.position]['message']['isExactly'] = [snip.replace('"', "") for snip in self.children[2].value.split('" "')] if len(self.children[2].value) else []
 
-        with open(f'./reactions/{interaction.user.id}.json', 'w') as fileOut: fileOut.write(json.dumps(self.view.items, indent=4))
-
+        with open(f'./reactions/{interaction.user.id}.json', 'w') as file_out: file_out.write(json.dumps(self.view.items, indent=4))
 
         await self.view.attached_message.edit(content="", embeds=[self.view.get_embed()], view=self.view)
         await interaction.response.defer()

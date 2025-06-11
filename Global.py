@@ -26,7 +26,6 @@ Client   = cmds.Bot(command_prefix=prefix, intents=intents, activity=activity)
 
 threads = []
 commands = {}
-starboards = {}
 
 none = discord.AllowedMentions.none()
 

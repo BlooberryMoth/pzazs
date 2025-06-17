@@ -3,7 +3,7 @@ from Global import *
 
 description = """(Moderator Only) Opens menu for controlling the First game."""
 permission = 2
-aliases = ['game']
+aliases = ['first']
 usage = ['start [channel] [timezone] [start date]', 'disabled', 'resync']
 
 
@@ -26,9 +26,9 @@ async def handle(message: discord.Message, args: list=None, c: cmds.Context=None
 
 
 @Client.hybrid_group()
-async def game(ctx: cmds.Context): ...
+async def first(ctx: cmds.Context): ...
 
-@game.command(name="start")
+@first.command(name="start")
 async def _start(ctx: cmds.Context,
                  channel: discord.TextChannel=None,
                  timezone: str=None,
@@ -64,7 +64,7 @@ async def _start(ctx: cmds.Context,
     async with ctx.channel.typing(): await build_statistics(channel, timezone, start_date)
     await response.edit(content=f"> Finished building statistics in {dt.now() - then}")
 
-@game.command(name="disable")
+@first.command(name="disable")
 async def _disable(ctx: cmds.Context):
     """
     (Moderator Only) Used to disabled the First game, removing all points from everyone in the server.
@@ -80,7 +80,7 @@ async def _disable(ctx: cmds.Context):
     os.remove(f'./games/first/{ctx.guild.id}.json')
     await ctx.send(f"> Disabled First game for {ctx.guild.name}.", silent=True)
 
-@game.command(name="resync")
+@first.command(name="resync")
 async def _resync(ctx: cmds.Context):
     """
     (Moderator Only) Used to resync the messages for the First game. This can take a long time...
@@ -116,9 +116,11 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
         "lastMonthWinner": [],
         "channelID":       channel.id,
         "timezone":        timezone,
-        "startDate":       f"{start_date.date()}",
+        "startDate":       str(start_date.date()),
         "statistics":      {}
     }
+
+    graph = {}
 
     curr_date = last_date = start_date.date()
     async for message in channel.history(limit=None, after=start_date, oldest_first=True):
@@ -149,10 +151,13 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
                 "points":      0,
                 "totalPoints": 0,
                 "bestStreak":  0,
-                "firstPoint":  f"{curr_date}",
-                "lastPoint":   f"{curr_date}"
+                "firstPoint":  str(curr_date),
+                "lastPoint":   str(curr_date)
             }
         else: user = game['statistics'][message.author.id]
+
+        if message.author.id not in graph: graph[message.author.id] = [[message.id, str(curr_date)]]
+        else: graph[message.author.id] += [[message.id, str(curr_date)]]
 
         user['points'] += 1
         user['totalPoints'] += 1
@@ -178,3 +183,4 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
     if rd(today.date().replace(day=1), curr_date.replace(day=1)).months > 1: game['lastMonthWinner'] = []
 
     with open(f'./games/first/{channel.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
+    with open(f'./http/res/games/first/{channel.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(graph))

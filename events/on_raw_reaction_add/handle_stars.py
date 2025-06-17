@@ -18,53 +18,55 @@ async def handle(ctx: discord.RawReactionActionEvent):
         starboard['messageCache'] = starboard['messageCache'][-24:] + [message.id]
         with open(f'./starboards/{ctx.guild_id}.json', 'w') as file_out: file_out.write(json.dumps(starboard, indent=4))
 
-        try: channel = guild.get_channel(starboard['channelID'])
-        except: return await message.reply(f"Unable to find/access the Starboard channel!", allowed_mentions=none, silent=True)
+        channel = guild.get_channel(starboard['channelID'])
+        if not channel: return await message.reply(f"Unable to find/access the Starboard channel!", allowed_mentions=none, silent=True)
 
-        embeds = []
-        embed = discord.Embed(color=0xffac33,
-                              timestamp=dt.now(),
-                              description=f"[Jump to message ;](<{message.jump_url}>)",
-                              url="https://pzazs.thatgalblu.com") \
-        .set_author(name=message.author.name, icon_url=message.author.avatar.url or "https://pzazs.thatgalblu.com/api/res/images/404.png")
+        i = 0
+        embeds = [discord.Embed(color=0xffac33, url="https://pzazs.thatgalblu.com", description="test") for _ in range(4)]
+        embeds[0].description = f"[Jump to message ;](<{message.jump_url}>)"
+        embeds[0].timestamp =  dt.now()
+        embeds[0].set_author(name=message.author.name, icon_url=message.author.avatar.url or "https://pzazs.thatgalblu.com/api/res/images/404.png")
 
         if message.reference:
             reply = await message.channel.fetch_message(message.reference.message_id)
-            embed.add_field(name=f"Replying to __{reply.author.name}__:", value=reply.content, inline=False)
+            links = [_.group() for _ in re.finditer("((h|H)(t|T)(t|T)(p|P))\S*(\s|)", reply.content)]
+            if len(links):
+                if 'tenor.com/view' in links[0]:
+                    r = requests.get(links[0])
+                    url = f"https://c.tenor.com/{str(r.content).split('media1.tenor.com/m/')[1].split('/')[0]}/tenor.gif"
+                else: url = links[0]
+                embeds[0].set_thumbnail(url=url)
+                reply.content = "\n".join(reply.content.split(links[-1]))
+            embeds[0].add_field(name=f"Replying to __@**{reply.author.global_name}**__:", value=reply.content, inline=False)
+            if len(reply.attachments) and not embeds[0].thumbnail.url: embeds[0].set_thumbnail(url=reply.attachments[0].url)
+            if len(reply.stickers) and not embeds[0].thumbnail.url: embeds[0].set_thumbnail(url=reply.stickers[0].url)
 
-        if message.content:
-            try:
-                links = [_.group() for _ in re.finditer("(http)\S*(\s|)", message.content.lower())]
-                for link in links[:4]:
-                    if 'tenor.com/view/' in link:
-                        r = requests.get(link)
-                        url = f"https://c.tenor.com/{str(r.content).split('media1.tenor.com/m/')[1].split('/')[0]}/tenor.gif"
-                    else: url = link
-                    embed.set_image(url=url)
-                    embeds.append(embed)
-                    embed = discord.Embed(url="https://pzazs.thatgalblu.com")
-                message.content = "\n".join(message.content.split(link))
-            except: pass
-                
-            embed.add_field(name=f"__{message.author.name}__:", value=f"{message.content}")
+        for attachment in message.attachments:
+            if i >= 4: break
+            if 'video' in attachment.content_type: i -= 1
+            else: embeds[i].set_image(url=attachment.url)
+            i += 1
 
-        if len(message.attachments):
-            i = len(embeds)
-            for attachment in message.attachments:
-                if i > 4: break
-                if 'video' in attachment.content_type: i -= 1
-                else: embed.set_image(url=attachment.url)
-                embeds.append(embed)
-                embed = discord.Embed(url="https://pzazs.thatgalblu.com")
-                i += 1
-        else: embeds.append(embed)
+        links = [_.group() for _ in re.finditer("((h|H)(t|T)(t|T)(p|P))\S*(\s|)", message.content)]
+        for link in links[:4]:
+            if i >= 4: break
+            if 'tenor.com/view' in link:
+                r = requests.get(link)
+                url = f"https://c.tenor.com/{str(r.content).split('media1.tenor.com/m/')[1].split('/')[0]}/tenor.gif"
+            else: url = link
+            embeds[i].set_image(url=url)
+            i += 1
+            message.content = "\n".join(message.content.split(link))
+        embeds[0].add_field(name=f"__@**{message.author.global_name}**__:", value=message.content, inline=False)
 
-        if True in ['video' in attachment.content_type for attachment in message.attachments]:
-            embed.description += " (video attachment(s))"
-            if False in ['video' in attachment.content_type for attachment in message.attachments]: embed.description += " (+ more attachment(s))" 
+        if True in ['video' in attachment.content_type for attachment in message.attachments]: embeds[0].description += " (video attachment(s))"
+        if i >= 4 and False in ['video' in attachment.content_type for attachment in message.attachments]: embeds[0].description += " (+ more attachment(s))" 
         
-        if len(message.stickers):
-            if len(embeds) < 4: embeds.append(discord.Embed(url="https://pzazs.thatgalblu.com").set_image(url=message.stickers[0].url))
-            else: embed.add_field(name="Sticker", value="")
+        for sticker in message.stickers:
+            if i >= 4:
+                embeds[0].description += "(+ stickers)"
+                break
+            embeds[i].set_image(url=sticker.url)
+            i += 1
         
         await channel.send(content='', embeds=embeds)

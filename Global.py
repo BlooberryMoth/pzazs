@@ -1,6 +1,5 @@
-import discord, logging
+import discord, logging, sys
 from discord.ext import commands, tasks
-from datetime import datetime as dt
 
 
 # Global variables, imports, and methods
@@ -21,7 +20,15 @@ intents  = discord.Intents.default(); intents.members = intents.message_content 
 activity = discord.Activity(name=activityText, type=discord.ActivityType.playing)
 Client   = commands.Bot(command_prefix=PREFIX, intents=intents, activity=activity)
 
-LOGGER = logging.getLogger()
+LOGGER = logging.getLogger(f"PZ(az)S")
+LOGGER.setLevel(logging.INFO)
+log_handler = logging.StreamHandler(sys.stdout)
+log_format = logging.Formatter(
+    fmt="\x1b[1;30m%(asctime)s \x1b[1;34m%(levelname)s     \x1b[1;36m%(name)s \x1b[m%(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+log_handler.setFormatter(log_format)
+LOGGER.addHandler(log_handler)
 
 threads = []
 command_aliases = {}
@@ -34,8 +41,6 @@ request_emoji_embed = discord.Embed(color=0x69a9d9,
 none = discord.AllowedMentions.none()
 
 # Global methods
-
-def log(text: str) -> None: print(f'{dt.now().replace(microsecond=0)} LOG      {text}')
 
 async def reply(content: str, embeds: list=[], view: discord.ui.View=None, m: discord.Message=None, c: commands.Context=None, ephemeral: bool=False) -> discord.Message:
     if c: return await c.send(content, embeds=embeds, view=view, allowed_mentions=none, silent=True, ephemeral=ephemeral)

@@ -1,4 +1,4 @@
-import importlib, logging, os
+import importlib, os
 from Global import LOGGER, Client, command_aliases, token
 
 # ////.:•,,•:.\\\\ -"yummy bugs"

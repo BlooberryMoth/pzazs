@@ -20,7 +20,7 @@ intents  = discord.Intents.default(); intents.members = intents.message_content 
 activity = discord.Activity(name=activityText, type=discord.ActivityType.playing)
 Client   = commands.Bot(command_prefix=PREFIX, intents=intents, activity=activity)
 
-LOGGER = logging.getLogger(f"PZ(az)S")
+LOGGER = logging.getLogger("PZ(az)S")
 LOGGER.setLevel(logging.INFO)
 log_handler = logging.StreamHandler(sys.stdout)
 log_format = logging.Formatter(

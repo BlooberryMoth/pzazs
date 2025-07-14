@@ -1,6 +1,11 @@
-# Variables
+import discord, logging
+from discord.ext import commands, tasks
+from datetime import datetime as dt
 
-prefix = '..'
+
+# Global variables, imports, and methods
+
+PREFIX = '..'
 try:
     with open("./token.txt") as token: token = fr'{token.read()}'
 except ValueError: raise "Unable to load token from \"token.txt\"."
@@ -10,22 +15,16 @@ except ValueError: raise "Unable to load secret from \"secret.txt\"."
 
 activityText = fr"in dev mode"
 
-# Imports, global variables, and methods
-
-import discord, importlib, json, os, threading
-from discord.ext import commands as cmds, tasks
-from datetime import datetime as dt
-from dateutil.relativedelta import relativedelta as rd
-from pytz import timezone as tz
+# Global variables
 
 intents  = discord.Intents.default(); intents.members = intents.message_content = True
 activity = discord.Activity(name=activityText, type=discord.ActivityType.playing)
-Client   = cmds.Bot(command_prefix=prefix, intents=intents, activity=activity)
+Client   = commands.Bot(command_prefix=PREFIX, intents=intents, activity=activity)
 
-# Global variables
+LOGGER = logging.getLogger()
 
-threads = []
-commands = {}
+Threads = []
+Commands = {}
 
 request_emoji_embed = discord.Embed(color=0x69a9d9,
                                     title="React to this message with the emoji you want to use",
@@ -38,11 +37,11 @@ none = discord.AllowedMentions.none()
 
 def log(text: str) -> None: print(f'{dt.now().replace(microsecond=0)} LOG      {text}')
 
-async def reply(content: str, embeds: list=[], view: discord.ui.View=None, m: discord.Message=None, c: cmds.Context=None, ephemeral: bool=False) -> discord.Message:
+async def reply(content: str, embeds: list=[], view: discord.ui.View=None, m: discord.Message=None, c: commands.Context=None, ephemeral: bool=False) -> discord.Message:
     if c: return await c.send(content, embeds=embeds, view=view, allowed_mentions=none, silent=True, ephemeral=ephemeral)
     else: return await m.reply(content, embeds=embeds, view=view, allowed_mentions=none, silent=True)
 
-async def check_permission(message: discord.Message, permission: int=3, ctx: cmds.Context=None) -> bool:
+async def check_permission(message: discord.Message, permission: int=3, ctx: commands.Context=None) -> bool:
     userPermissionLevel = 0
     if message.guild:
         userPermissionLevel += 1

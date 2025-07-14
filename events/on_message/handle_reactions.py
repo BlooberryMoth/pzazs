@@ -1,4 +1,5 @@
-from Global import *
+import discord, json, os
+from Global import Client
 
 
 async def handle(message: discord.Message):

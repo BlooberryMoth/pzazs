@@ -1,5 +1,6 @@
-from Global import *
-import requests, re
+import discord, json, os, re, requests
+from datetime import datetime as dt
+from Global import Client, none
 
 
 async def handle(ctx: discord.RawReactionActionEvent):

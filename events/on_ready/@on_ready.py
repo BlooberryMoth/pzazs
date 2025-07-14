@@ -1,4 +1,4 @@
-from Global import Client, importlib, os
+from Global import importlib, os, Client
 
 
 @Client.event

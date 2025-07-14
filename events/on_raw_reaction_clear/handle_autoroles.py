@@ -1,4 +1,5 @@
-from Global import *
+import discord, json
+from Global import Client
 
 
 async def handle(ctx: discord.RawReactionClearEvent):

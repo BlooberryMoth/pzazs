@@ -1,4 +1,6 @@
-from Global import *
+import discord
+from discord.ext import commands
+from Global import check_permission, Client, none
 
 
 description = """Gets info about user. Defaults to you if no one is specified"""
@@ -7,7 +9,7 @@ aliases = ['getpfp', 'pfp']
 usage = ['getpfp [@user]']
 
 
-async def handle(message: discord.Message, args: list=None, c: cmds.Context=None, user: discord.User=None):
+async def handle(message: discord.Message, args: list=None, c: commands.Context=None, user: discord.User=None):
     if not await check_permission(message, permission, c): raise PermissionError
 
     if c:
@@ -20,7 +22,7 @@ async def handle(message: discord.Message, args: list=None, c: cmds.Context=None
 
 
 @Client.hybrid_command()
-async def getpfp(ctx: cmds.Context, user: discord.User=None):
+async def getpfp(ctx: commands.Context, user: discord.User=None):
     """
     Gets info about user. Defaults to you if no one is specified.
 

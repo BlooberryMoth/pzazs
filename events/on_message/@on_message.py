@@ -1,4 +1,5 @@
-from Global import Client, discord, importlib, os, json
+import discord, importlib, os
+from Global import Client, LOGGER
 
 
 @Client.event
@@ -8,4 +9,5 @@ async def on_message(message: discord.Message):
     for file in os.listdir('./events/on_message'):
         if not file.startswith('@') and file.endswith('.py'):
             module = importlib.import_module(f'events.on_message.{file.split(".py")[0]}')
-            await module.handle(message)
+            try: await module.handle(message)
+            except Exception as e: LOGGER.error(e)

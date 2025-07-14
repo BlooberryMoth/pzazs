@@ -1,4 +1,5 @@
-from Global import Client, discord, importlib, os
+import discord, importlib, os
+from Global import Client
 
 
 @Client.event

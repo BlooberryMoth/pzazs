@@ -1,4 +1,6 @@
-from Global import *
+import discord, json
+from discord.ext import commands as cmds
+from Global import CommandScrollMenu, check_permission, reply, Client, request_emoji_embed
 
 
 description = """Set up an autorole message for user-acquired server roles."""

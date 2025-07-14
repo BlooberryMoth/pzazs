@@ -1,10 +1,11 @@
-from Global import *
+import discord
+from Global import PREFIX, Commands
 
 
 async def handle(message: discord.Message):
-    if message.content.startswith(prefix):
-        alias, *args = message.content.lower().removeprefix(prefix).split(' ')
-        for command in commands:
-            if alias in commands[command]['aliases']:
-                try: await commands[command]['module'].handle(message, args)
+    if message.content.startswith(PREFIX):
+        alias, *args = message.content.lower().removeprefix(PREFIX).split(' ')
+        for command in Commands:
+            if alias in Commands[command]['aliases']:
+                try: await Commands[command]['module'].handle(message, args)
                 except PermissionError: return

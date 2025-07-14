@@ -1,10 +1,15 @@
-from Global import *
+import discord, json, os
+from discord.ext import commands as cmds
+from datetime import datetime as dt
+from dateutil.relativedelta import relativedelta as rd
+from pytz import timezone as tz
+from Global import check_permission, Client, none
 
 
 description = """(Moderator Only) Opens menu for controlling the First game."""
 permission = 2
 aliases = ['first']
-usage = ['start [channel] [timezone] [start date]', 'disabled', 'resync']
+usage = ['start [channel] [timezone] [start date]', 'disable', 'resync']
 
 
 async def handle(message: discord.Message, args: list=None, c: cmds.Context=None):
@@ -108,10 +113,10 @@ async def _resync(ctx: cmds.Context):
 
 
 async def build_statistics(channel: discord.TextChannel, timezone: str, start_date: dt) -> None:
-    today = dt.now(tz(timezone))
+    today = dt.now(tz(timezone)).date()
     game = {
         "currentWinner":   None,
-        "perviousWinner":  None,
+        "previousWinner":  None,
         "currentStreak":   0,
         "lastMonthWinner": [],
         "channelID":       channel.id,
@@ -129,20 +134,20 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
         if curr_date == last_date or 'first' not in message.content.lower(): continue
         if 'first' not in message.content.lower(): continue
 
-        if (curr_date - last_date).days > 1: game['perviousWinner'] = game['currentWinner'] = None
+        if (curr_date - last_date).days > 1: game['previousWinner'] = game['currentWinner'] = None
         if [curr_date.year, curr_date.month] != [last_date.year, last_date.month]:
             highest_score = max([game['statistics'][userID]['points'] for userID in game['statistics']] + [0])
             last_month_winner = []
             for userID in game['statistics']:
                 if game['statistics'][userID]['points'] == highest_score and highest_score:
                     game['statistics'][userID]['wins'] += 1
-                    game['lastMonthWinner'] += [int(userID)]
+                    last_month_winner += [int(userID)]
                 game['statistics'][userID]['points'] = 0
             game['lastMonthWinner'] = last_month_winner
 
-        game['perviousWinner'] = game['currentWinner']
+        game['previousWinner'] = game['currentWinner']
         game['currentWinner'] = message.author.id
-        if game['currentWinner'] == game['perviousWinner']: game['currentStreak'] += 1
+        if game['currentWinner'] == game['previousWinner']: game['currentStreak'] += 1
         else: game['currentStreak'] = 1
 
         if message.author.id not in game['statistics']:
@@ -167,20 +172,20 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
 
         last_date = curr_date
 
-    if today.date() != curr_date:
+    if today != curr_date:
         game['previousWinner'] = game['currentWinner']
         game['currentWinner'] = None
-    if (today.date() - curr_date).days > 1: game['previousWinner'] = None
+    if (today - curr_date).days > 1: game['previousWinner'] = None
     if [today.year, today.month] != [curr_date.year, curr_date.month]:
         highest_score = max([game['statistics'][userID]['points'] for userID in game['statistics']] + [0])
         last_month_winner = []
         for userID in game['statistics']:
             if game['statistics'][userID]['points'] == highest_score and highest_score:
                 game['statistics'][userID]['wins'] += 1
-                game['lastMonthWinner'] += [int(userID)]
+                last_month_winner += [int(userID)]
             game['statistics'][userID]['points'] = 0
         game['lastMonthWinner'] = last_month_winner
-    if rd(today.date().replace(day=1), curr_date.replace(day=1)).months > 1: game['lastMonthWinner'] = []
+    if rd(today.replace(day=1), curr_date.replace(day=1)).months > 1: game['lastMonthWinner'] = []
 
     with open(f'./games/first/{channel.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
-    with open(f'./http/res/games/first/{channel.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(graph))
+    with open(f'./games/first/{channel.guild.id}_graph.json', 'w') as file_out: file_out.write(json.dumps(graph))

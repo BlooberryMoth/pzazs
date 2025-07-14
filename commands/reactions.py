@@ -1,4 +1,6 @@
-from Global import *
+import discord, json
+from discord.ext import commands
+from Global import CommandScrollMenu, check_permission, reply, Client, request_emoji_embed
 
 
 description = """Adds an emoji reaction to a message that you send."""
@@ -7,7 +9,7 @@ aliases = ['reactions', 'reacts']
 usage = []
 
 
-async def handle(message: discord.Message, args: list=None, c: cmds.Context=None):
+async def handle(message: discord.Message, args: list=None, c: commands.Context=None):
     if not await check_permission(message, permission, c): raise PermissionError
 
     response = await reply("> Loading...", m=message, c=c)
@@ -21,7 +23,7 @@ async def handle(message: discord.Message, args: list=None, c: cmds.Context=None
 
 
 @Client.hybrid_command()
-async def reactions(ctx: cmds.Context):
+async def reactions(ctx: commands.Context):
     """
     Adds an emoji reaction to a message that you send.
     

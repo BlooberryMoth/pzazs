@@ -1,5 +1,5 @@
 import importlib, os
-from Global import LOGGER, Client, Commands, token
+from Global import LOGGER, Client, command_aliases, token
 
 # ////.:•,,•:.\\\\ -"yummy bugs"
 
@@ -14,7 +14,7 @@ if __name__== '__main__':
         if file.endswith('.py'):
             file = file.split('.py')[0]
             module = importlib.import_module(f'commands.{file}')
-            Commands[file] = {'aliases': module.aliases, 'module': module}
+            command_aliases[file] = {'aliases': module.aliases, 'module': module}
     LOGGER.info("Loaded commands.")
 
     if not os.path.exists('./events'): os.mkdir("./events")

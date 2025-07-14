@@ -23,8 +23,8 @@ Client   = commands.Bot(command_prefix=PREFIX, intents=intents, activity=activit
 
 LOGGER = logging.getLogger()
 
-Threads = []
-Commands = {}
+threads = []
+command_aliases = {}
 
 request_emoji_embed = discord.Embed(color=0x69a9d9,
                                     title="React to this message with the emoji you want to use",

@@ -1,4 +1,6 @@
-from Global import dt, os, LOGGER, Client, Threads
+import importlib, os, threading
+from datetime import datetime as dt
+from Global import LOGGER, Client, threads
 
 async def handle():
     await Client.tree.sync()
@@ -11,10 +13,10 @@ async def handle():
     if not os.path.exists('./threads'): os.mkdir("./threads")
     for file in os.listdir('./threads'):
         if file.endswith('.py'):
-            module = dt.import_module(f'threads.{file.removesuffix(".py")}')
-            try: thread = dt.Thread(target=module.execute, args=())
+            module = importlib.import_module(f'threads.{file.removesuffix(".py")}')
+            try: thread = threading.Thread(target=module.execute, args=())
             except Exception as e: LOGGER.error(e)
             else:
-                Threads.append(thread)
+                threads.append(thread)
                 thread.start()
     LOGGER.info(f"Threads opened in {dt.now() - now}.")

@@ -1,9 +1,10 @@
-from Global import LOGGER
+from Global import LOGGER, secret
 from http.server import HTTPServer
 from APIServer import name, port, Server
 
 
 def execute():
+    if secret is None: return
     server = HTTPServer((name, port), Server)
     
     LOGGER.info(f"Starting HTML server at \"http://{name}:{port}\"...")

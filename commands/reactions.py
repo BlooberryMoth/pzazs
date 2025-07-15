@@ -9,10 +9,10 @@ aliases = ['reactions', 'reacts']
 usage = []
 
 
-async def handle(message: discord.Message, args: list=None, c: commands.Context=None):
-    if not await check_permission(message, permission, c): raise PermissionError
+async def handle(message: discord.Message, args: list=None, ctx: commands.Context=None):
+    if not await check_permission(message, permission, ctx): raise PermissionError
 
-    response = await reply("> Loading...", m=message, c=c)
+    response = await reply("> Loading...", message=message, ctx=ctx)
 
     try:
         with open(f'./reactions/{message.author.id}.json') as file_in: reactions = json.load(file_in)
@@ -32,7 +32,7 @@ async def reactions(ctx: commands.Context):
     ctx: cmds.Context
         Context
     """
-    try: await handle(ctx.message, c=ctx)
+    try: await handle(ctx.message, ctx=ctx)
     except PermissionError: return
 
 

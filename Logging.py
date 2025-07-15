@@ -2,7 +2,7 @@ import logging, sys
 
 
 class CustomLoggingFormatter(logging.Formatter):
-    def __init__(self, fmt = None, datefmt = None, style = "%", validate = True, *, defaults = None):
+    def __init__(self, fmt=None, datefmt=None, style="%", validate=True, *, defaults=None):
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
 
     FORMATS = {
@@ -15,7 +15,7 @@ class CustomLoggingFormatter(logging.Formatter):
 
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt, datefmt=self.datefmt, style=self._style)
+        formatter = logging.Formatter(log_fmt, datefmt=self.datefmt)
         return formatter.format(record)
 
 

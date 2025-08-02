@@ -22,7 +22,7 @@ def execute():
                 with open(f'./games/first/{file}', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
 
                 if now_en_loc.day == 1:
-                    highest_score = max(game['statistics'][userID]['points'] for userID in game['statistics'] + [0])
+                    highest_score = max([game['statistics'][userID]['points'] for userID in game['statistics']] + [0])
                     last_month_winner = []
                     for userID in game['statistics']:
                         if highest_score and game['statistics'][userID]['point'] == highest_score:

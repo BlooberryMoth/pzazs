@@ -4,7 +4,7 @@ from Global import Permission, reply, Client, none
 
 
 description = """(Moderator Only) Enables or disables the Starboard."""
-permission = Permission.Moderator
+permission = Permission.MODERATOR
 aliases = ['starboard']
 usage = ['enable <channel> [minimum_stars]', 'disable']
 

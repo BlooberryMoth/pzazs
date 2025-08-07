@@ -45,8 +45,8 @@ class Permission:
     MODERATOR = 2
     SERVER_OWNER = 3
 
-    @classmethod
-    async def check(message: discord.Message, permission: int=Permission.SERVER_OWNER, ctx: commands.Context=None) -> bool:
+    @staticmethod
+    async def check(message: discord.Message, permission: int=3, ctx: commands.Context=None) -> bool:
         userPermissionLevel = Permission.DIRECT_MESSAGES
         if message.guild:
             userPermissionLevel += 1

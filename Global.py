@@ -38,21 +38,30 @@ async def reply(content: str, embeds: list=[], view: discord.ui.View=None, messa
     if ctx: return await ctx.send(content, embeds=embeds, view=view, allowed_mentions=none, silent=True, ephemeral=ephemeral)
     else: return await message.reply(content, embeds=embeds, view=view, allowed_mentions=none, silent=True)
 
-async def check_permission(message: discord.Message, permission: int=3, ctx: commands.Context=None) -> bool:
-    userPermissionLevel = 0
-    if message.guild:
-        userPermissionLevel += 1
-        if message.author.guild_permissions.kick_members: userPermissionLevel += 1
-        if message.author == message.guild.owner: userPermissionLevel += 1
-    if userPermissionLevel >= permission: return True
-    else:
-        if userPermissionLevel == 0:
-            if ctx: await ctx.send("You have to be in a server to use this command.", ephemeral=True)
-            else: await message.reply("You have to be in a server to use this command.", allowed_mentions=none, silent=True)
+
+class Permission:
+    DIRECT_MESSAGES = 0
+    USER = 1
+    MODERATOR = 2
+    SERVER_OWNER = 3
+
+    @classmethod
+    async def check(message: discord.Message, permission: int=Permission.SERVER_OWNER, ctx: commands.Context=None) -> bool:
+        userPermissionLevel = Permission.DIRECT_MESSAGES
+        if message.guild:
+            userPermissionLevel += 1
+            if message.author.guild_permissions.kick_members: userPermissionLevel += 1
+            if message.author == message.guild.owner: userPermissionLevel += 1
+        if userPermissionLevel >= permission: return True
         else:
-            if ctx: await ctx.send("You do not have permission to use this command.", ephemeral=True)
-            else: await message.reply("You do not have permission to use this command.", allowed_mentions=none, silent=True)
-        return False
+            if userPermissionLevel == Permission.DIRECT_MESSAGES:
+                if ctx: await ctx.send("You have to be in a server to use this command.", ephemeral=True)
+                else: await message.reply("You have to be in a server to use this command.", allowed_mentions=none, silent=True)
+            else:
+                if ctx: await ctx.send("You do not have permission to use this command.", ephemeral=True)
+                else: await message.reply("You do not have permission to use this command.", allowed_mentions=none, silent=True)
+            return False
+
     
 # Global classes
 

@@ -3,17 +3,17 @@ from discord.ext import commands as cmds
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pytz import timezone as tz
-from Global import check_permission, Client, none
+from Global import Permission, Client, none
 
 
 description = """(Moderator Only) Opens menu for controlling the First game."""
-permission = 2
+permission = Permission.MODERATOR
 aliases = ['first']
 usage = ['start [channel] [timezone] [start date]', 'disable', 'resync']
 
 
 async def handle(message: discord.Message, args: list=None, c: cmds.Context=None):
-    if not await check_permission(message, permission, c): raise PermissionError
+    if not await Permission.check(message, permission, c): raise PermissionError
 
     if len(args):
         if args[0] == "start":

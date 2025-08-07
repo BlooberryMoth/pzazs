@@ -1,16 +1,16 @@
 import discord, json
 from discord.ext import commands
-from Global import CommandScrollMenu, check_permission, reply, Client, request_emoji_embed
+from Global import CommandScrollMenu, Permission, reply, Client, request_emoji_embed
 
 
 description = """Adds an emoji reaction to a message that you send."""
-permission = 0
+permission = Permission.DIRECT_MESSAGES
 aliases = ['reactions', 'reacts']
 usage = []
 
 
 async def handle(message: discord.Message, args: list=None, ctx: commands.Context=None):
-    if not await check_permission(message, permission, ctx): raise PermissionError
+    if not await Permission.check(message, permission, ctx): raise PermissionError
 
     response = await reply("> Loading...", message=message, ctx=ctx)
 

@@ -1,16 +1,16 @@
 import discord, json
 from discord.ext import commands as cmds
-from Global import CommandScrollMenu, check_permission, reply, Client, request_emoji_embed
+from Global import CommandScrollMenu, Permission, reply, Client, request_emoji_embed
 
 
 description = """Set up an autorole message for user-acquired server roles."""
-permission = 2
+permission = Permission.MODERATOR
 aliases = ['autorole']
 usage = []
 
 
 async def handle(message: discord.Message, args: list=None, ctx: cmds.Context=None):
-    if not await check_permission(message, permission, ctx): raise PermissionError
+    if not await Permission.check(message, permission, ctx): raise PermissionError
 
     response = await reply("> Loading...", message=message, ctx=ctx)
 

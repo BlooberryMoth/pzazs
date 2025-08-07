@@ -1,16 +1,16 @@
 import discord, json, os
 from discord.ext import commands as cmds
-from Global import check_permission, reply, Client, none
+from Global import Permission, reply, Client, none
 
 
 description = """(Moderator Only) Enables or disables the Starboard."""
-permission = 2
+permission = Permission.Moderator
 aliases = ['starboard']
 usage = ['enable <channel> [minimum_stars]', 'disable']
 
 
 async def handle(message: discord.Message, args: list=None, ctx: cmds.Context=None):
-    if not await check_permission(message, permission, ctx): raise PermissionError
+    if not await Permission.check(message, permission, ctx): raise PermissionError
 
     if len(args):
         if args[0] == "enable":

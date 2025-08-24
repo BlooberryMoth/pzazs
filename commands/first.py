@@ -52,7 +52,7 @@ async def _start(ctx: cmds.Context,
     start_date: str=None
         'all' | YYYY-mm-dd -|- Starting date used to gather messages if you've already played before. Defaults to midnight, today.
     """
-    if not await check_permission(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx.message, permission, ctx): return
     if not channel:  channel  = ctx.channel
     if not timezone: timezone = "UTC"
     else:
@@ -79,7 +79,7 @@ async def _disable(ctx: cmds.Context):
     ctx: cmds.Context
         Context
     """
-    if not await check_permission(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx.message, permission, ctx): return
     if not os.path.exists(f'./games/first/{ctx.guild.id}.json'): return await ctx.send("> The First game isn't even enabled here!", ephemeral=True)
 
     os.remove(f'./games/first/{ctx.guild.id}.json')
@@ -95,7 +95,7 @@ async def _resync(ctx: cmds.Context):
     ctx: cmds.Context
         Context
     """
-    if not await check_permission(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx.message, permission, ctx): return
 
     try:
         with open(f'./games/first/{ctx.guild.id}.json') as file_in: game = json.load(file_in)

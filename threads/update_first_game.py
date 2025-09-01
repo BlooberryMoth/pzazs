@@ -25,7 +25,7 @@ def execute():
                     highest_score = max([game['statistics'][userID]['points'] for userID in game['statistics']] + [0])
                     last_month_winner = []
                     for userID in game['statistics']:
-                        if highest_score and game['statistics'][userID]['point'] == highest_score:
+                        if highest_score and game['statistics'][userID]['points'] == highest_score:
                             game['statistics'][userID]['wins'] += 1
                             last_month_winner += [int(userID)]
                         game['statistics'][userID]['points'] = 0

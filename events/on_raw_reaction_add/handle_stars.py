@@ -30,7 +30,7 @@ async def handle(ctx: discord.RawReactionActionEvent):
 
         if message.reference:
             reply = await message.channel.fetch_message(message.reference.message_id)
-            links = [_.group() for _ in re.finditer("((h|H)(t|T)(t|T)(p|P))\S*(\s|)", reply.content)]
+            links = [_.group() for _ in re.finditer("((h|H)(t|T)(t|T)(p|P))[^\s]*(\s|)", reply.content)]
             if len(links):
                 if 'tenor.com/view' in links[0]:
                     r = requests.get(links[0])
@@ -48,7 +48,7 @@ async def handle(ctx: discord.RawReactionActionEvent):
             else: embeds[i].set_image(url=attachment.url)
             i += 1
 
-        links = [_.group() for _ in re.finditer("((h|H)(t|T)(t|T)(p|P))\S*(\s|)", message.content)]
+        links = [_.group() for _ in re.finditer("((h|H)(t|T)(t|T)(p|P))[^\s]*(\s|)", message.content)]
         for link in links[:4]:
             if i >= 4: break
             if 'tenor.com/view' in link:

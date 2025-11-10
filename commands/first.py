@@ -6,32 +6,56 @@ from pytz import timezone as tz
 from Global import Permission, Client, none
 
 
-description = """(Moderator Only) Opens menu for controlling the First game."""
-permission = Permission.MODERATOR
+description = """(Moderator Only) Opens menu for controlling the First game. | (All Users) Show rank for you or another user in the First game."""
+permission = Permission.USER
 aliases = ['first']
-usage = ['start [channel] [timezone] [start date]', 'disable', 'resync']
+usage = ['rank [@user]', '(MOD) start [#channel] [timezone] [start date]', '(MOD) disable', '(MOD) resync']
 
 
 async def handle(message: discord.Message, args: list=None, c: cmds.Context=None):
     if not await Permission.check(message, permission, c): raise PermissionError
 
     if len(args):
-        if args[0] == "start":
-            if not len(args) >= 2: channel = message.channel
-            else:
-                try:
-                    channel = message.guild.get_channel_or_thread(int(args[1].removeprefix('<#').removesuffix('>')))
-                    if not channel: raise
-                except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", silent=True, allowed_mentions=none)
-            args += [None, None, None]
-            return await _start(await Client.get_context(message), channel, args[2], args[3])
-
-        if args[0] == "disable": return await _disable(await Client.get_context(message))
-        if args[0] == "resync": return await _resync(await Client.get_context(message))
+        match args[0]:
+            case "rank":
+                try: user = message.mentions[0]
+                except: user = message.author
+                return await _rank(await Client.get_context(message), user)
+            case "start":
+                if not await Permission.check(message, Permission.MODERATOR, c): raise PermissionError
+                if not len(args) >= 2: channel = message.channel
+                else:
+                    try:
+                        channel = message.guild.get_channel_or_thread(int(args[1].removeprefix('<#').removesuffix('>')))
+                        if not channel: raise
+                    except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", silent=True, allowed_mentions=none)
+                args += [None, None, None]
+                return await _start(await Client.get_context(message), channel, args[2], args[3])
+            case "disable": return await _disable(await Client.get_context(message))
+            case "resync": return await _resync(await Client.get_context(message))
 
 
 @Client.hybrid_group()
 async def first(ctx: cmds.Context): ...
+
+
+@first.command(name="rank")
+async def _rank(ctx: cmds.Context, user: discord.User=None):
+    """
+    Show rank for you or another user in the First game.
+
+    Parameters
+    ----------
+    ctx: cmds.Context
+        Context
+    user: discord.User
+        User
+    """
+    if not await Permission.check(ctx.message, permission, ctx): return
+
+    if not user: user = ctx.author
+    return await ctx.send(f"> This is a test :) {user}", ephemeral=True, allowed_mentions=none)
+
 
 @first.command(name="start")
 async def _start(ctx: cmds.Context,
@@ -52,7 +76,7 @@ async def _start(ctx: cmds.Context,
     start_date: str=None
         'all' | YYYY-mm-dd -|- Starting date used to gather messages if you've already played before. Defaults to midnight, today.
     """
-    if not await Permission.check(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx.message, Permission.MODERATOR, ctx): return
     if not channel:  channel  = ctx.channel
     if not timezone: timezone = "UTC"
     else:
@@ -69,6 +93,7 @@ async def _start(ctx: cmds.Context,
     async with ctx.channel.typing(): await build_statistics(channel, timezone, start_date)
     await response.edit(content=f"> Finished building statistics in {dt.now() - then}")
 
+
 @first.command(name="disable")
 async def _disable(ctx: cmds.Context):
     """
@@ -79,11 +104,12 @@ async def _disable(ctx: cmds.Context):
     ctx: cmds.Context
         Context
     """
-    if not await Permission.check(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx.message, Permission.MODERATOR, ctx): return
     if not os.path.exists(f'./games/first/{ctx.guild.id}.json'): return await ctx.send("> The First game isn't even enabled here!", ephemeral=True)
 
     os.remove(f'./games/first/{ctx.guild.id}.json')
     await ctx.send(f"> Disabled First game for {ctx.guild.name}.", silent=True)
+
 
 @first.command(name="resync")
 async def _resync(ctx: cmds.Context):
@@ -95,7 +121,7 @@ async def _resync(ctx: cmds.Context):
     ctx: cmds.Context
         Context
     """
-    if not await Permission.check(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx.message, Permission.MODERATOR, ctx): return
 
     try:
         with open(f'./games/first/{ctx.guild.id}.json') as file_in: game = json.load(file_in)

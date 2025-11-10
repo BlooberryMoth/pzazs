@@ -6,7 +6,7 @@ from Global import Permission, Client, none
 description = """Gets info about user. Defaults to you if no one is specified"""
 permission = Permission.DIRECT_MESSAGES
 aliases = ['getpfp', 'pfp']
-usage = ['getpfp [@user]']
+usage = ['[@user]']
 
 
 async def handle(message: discord.Message, args: list=None, c: commands.Context=None, user: discord.User=None):

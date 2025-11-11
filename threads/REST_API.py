@@ -7,7 +7,7 @@ PORT = 3080 # Assign your port here
 
 
 class Server(BaseHTTPRequestHandler):
-    with open('../http/404/index.html') as file_in: index = file_in.buffer.read()
+    with open('./website/http/404/index.html') as file_in: index = file_in.buffer.read()
     fourohfour = 404, [], index # This variable is for the default 404 page in "/http/404"
 
     def do_GET(self) -> None:

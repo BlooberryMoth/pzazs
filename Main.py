@@ -1,5 +1,6 @@
 import importlib, os
-from Global import LOGGER, Client, command_aliases, token
+from Global import Client, command_aliases, token
+from Logging import LOG
 
 # ////.:•,,•:.\\\\ -"yummy bugs"
 
@@ -15,13 +16,13 @@ if __name__== '__main__':
             file = file.split('.py')[0]
             module = importlib.import_module(f'commands.{file}')
             command_aliases[file] = {'aliases': module.aliases, 'module': module}
-    LOGGER.info("Loaded commands.")
+    LOG.info("Loaded commands.")
 
     if not os.path.exists('./events'): os.mkdir("./events")
     for folder in os.listdir('./events'):
         for file in os.listdir(f'./events/{folder}'):
             if file.startswith('@') and file.endswith('py'): module = importlib.import_module(f'events.{folder}.{file.removesuffix(".py")}')
-    LOGGER.info("Loaded events.")
+    LOG.info("Loaded events.")
 
     if not os.path.exists('./starboards'):  os.mkdir("./starboards")
     if not os.path.exists('./reactions'):   os.mkdir("./reactions")
@@ -29,4 +30,4 @@ if __name__== '__main__':
     if not os.path.exists('./games/first'): os.mkdir("./games/first")
 
     Client.run(token=token) # The rest of intialization happens in ./events/on_ready/@on_ready.py -> ./events/on_ready/startup.py
-    LOGGER.info(f"Closing client \"{Client.user}\".")
+    LOG.info(f"Closing client \"{Client.user}\".")

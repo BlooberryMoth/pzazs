@@ -19,8 +19,8 @@ class CustomLoggingFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-LOGGER = logging.getLogger("PZ(az)S")
-LOGGER.setLevel(logging.INFO)
+LOG = logging.getLogger("PZ(az)S")
+LOG.setLevel(logging.INFO)
 log_handler = logging.StreamHandler(sys.stdout)
 log_handler.setFormatter(CustomLoggingFormatter(datefmt="%Y-%m-%d %H:%M:%S"))
-LOGGER.addHandler(log_handler)
+LOG.addHandler(log_handler)

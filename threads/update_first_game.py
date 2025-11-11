@@ -2,7 +2,8 @@ import json, os, time
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pytz import timezone as tz
-from Global import LOGGER, Client
+from Global import Client
+from Logging import LOG
 
 
 def execute():
@@ -33,4 +34,4 @@ def execute():
                 
                 with open(f'./games/first/{file}', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
                 file_out.close()
-                LOGGER.info(f"Next round of First started for {Client.get_guild(int(file.removesuffix('.json'))).name}")
+                LOG.info(f"Next round of First started for {Client.get_guild(int(file.removesuffix('.json'))).name}")

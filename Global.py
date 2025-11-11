@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
-from Logging import LOGGER
+from PIL import ImageFont
+from Logging import LOG
 
 
 # Global variables, imports, and methods
@@ -12,7 +13,7 @@ try:
     with open("./oauth-secret.txt") as secret: secret = fr'{secret.read()}'
 except Exception as e:
     secret = None
-    LOGGER.error(f"Unable to load secret from \"oauth-secret.txt\": {e}")
+    LOG.error(f"Unable to load secret from \"oauth-secret.txt\": {e}")
 
 # Global variables
 
@@ -88,3 +89,8 @@ class CommandScrollMenu(discord.ui.View):
         if self.timer.current_loop: await self.attached_message.edit(content="> Timed out; Closing dialogue.", embeds=[], view=None)
 
     def get_embed(self) -> discord.Embed: ...
+
+
+class Font:
+    white = (255,255,255)
+    dm_sans_24 = ImageFont.truetype("./games/first/resources/fonts/DM Sans Black.ttf", size=24/3*4)

@@ -61,7 +61,7 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
         user = ctx.author
         if str(user.id) not in game['statistics']: return await ctx.reply("You haven't placed yet! Try winning a round *first*. verbal wink", silent=True, allowed_mentions=none)
     else:
-        if str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id} hasn't place in this server's First game!", silent=True, allowed_mentions=none)
+        if str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id}> hasn't place in this server's First game!", silent=True, allowed_mentions=none)
 
     response = await ctx.reply("> Loading...", silent=True, allowed_mentions=none)
 

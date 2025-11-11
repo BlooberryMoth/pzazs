@@ -1,5 +1,5 @@
 discord.py
 discord.oauth2
-PIL
+pillow
 python-dateutil
 pytz

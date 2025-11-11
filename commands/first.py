@@ -63,10 +63,9 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     else:
         if str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id} hasn't place in this server's First game!", silent=True, allowed_mentions=none)
 
-    # Anchor points:
-    # Name: 352, 19
-    # Place: 262, 20 | (262, 28) > (67, 25); 296x 20y
+    response = await ctx.reply("> Loading...", silent=True, allowed_mentions=none)
 
+    # Stream in the image data of the user's icon via requests and BytesIO, resize, and trim border into a circle.
     session = requests.session()
     try: icon = Image.open(io.BytesIO(session.get(user.avatar.url, stream=True).content))
     except: icon = Image.open("./http/res/images/404.png")
@@ -75,21 +74,36 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     mask_draw.circle(xy=(116,116), radius=116, fill=255)
     icon.putalpha(mask)
 
+    # Gather strings for drawing.
+    wins             = str(game['statistics'][str(user.id)]['wins'])
+    points           = str(game['statistics'][str(user.id)]['points'])
+    total_points     = str(game['statistics'][str(user.id)]['totalPoints'])
+    best_streak      = str(game['statistics'][str(user.id)]['bestStreak'])
+    first_point      =     game['statistics'][str(user.id)]['firstPoint']
+    last_point       =     game['statistics'][str(user.id)]['lastPoint']
+    last_win_message =     game['statistics'][str(user.id)]['lastWinMessage']
+
+    # Sort players to find the rank of the selected user.
     sorted_stats = dict(sorted(game['statistics'].items(), key=lambda x: (x[1]['wins'], x[1]['totalPoints']), reverse=True))
     place = f"#{[_ for _ in sorted_stats].index(str(user.id)) + 1}"
 
-    base = Image.open("./games/first/resources/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(base)
-
-    base.paste(icon, (29,29, 29+232,29+232), icon)
-
-    _, _, w, h = draw.textbbox((0,0), text=place, font=Font.dm_sans_24)
-    draw.text(text=place,     xy=(262+34-(w/2), 20), fill=Font.white, font=Font.dm_sans_24)
-    draw.text(text=user.name, xy=(352, 19),          fill=Font.white, font=Font.dm_sans_24)
+    # Open the base card.
+    card = Image.open("./games/first/resources/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(card)
+    card.paste(icon, (29,29, 29+232,29+232), icon) # Put player's icon.
+    _, _, w, h = draw.textbbox   ((0,0), text=place, font=Font.dm_sans_24) # Used to center the text of the placement (#1 or #28).
+    draw.text(text=place,        xy=(262+34-(w/2), 20), fill=Font.white, font=Font.dm_sans_24) # Center placement text with X + dX/2 - w/2, where dX is the width of the container you center inside of.
+    draw.text(text=user.name,    xy=(352, 19),          fill=Font.white, font=Font.dm_sans_24)
+    draw.text(text=points,       xy=(640, 80),          fill=Font.white, font=Font.dm_sans_24)
+    draw.text(text=wins,         xy=(561, 132),         fill=Font.white, font=Font.dm_sans_24)
+    draw.text(text=total_points, xy=(555, 183),         fill=Font.white, font=Font.dm_sans_24)
+    draw.text(text=best_streak,  xy=(549, 235),         fill=Font.white, font=Font.dm_sans_24)
+    draw.text(text=first_point,  xy=(531, 287),         fill=Font.white, font=Font.dm_sans_24)
+    draw.text(text=last_point,   xy=(528, 338),         fill=Font.white, font=Font.dm_sans_24)
 
     with io.BytesIO() as bytesIO:
-        base.save(bytesIO, 'PNG')
+        card.save(bytesIO, 'PNG')
         bytesIO.seek(0)
-        await ctx.reply('', file=discord.File(bytesIO, filename='card.png'), silent=True, allowed_mentions=none)
+        await response.edit(content='', attachments=[discord.File(bytesIO, filename='card.png')], allowed_mentions=none)
 
 
 @first.command(name="start")
@@ -218,7 +232,8 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
                 "totalPoints": 0,
                 "bestStreak":  0,
                 "firstPoint":  str(curr_date),
-                "lastPoint":   str(curr_date)
+                "lastPoint":   str(curr_date),
+                "lastWinMessage": ""
             }
         else: user = game['statistics'][message.author.id]
 
@@ -228,6 +243,7 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
         user['points'] += 1
         user['totalPoints'] += 1
         user['bestStreak'] = max(user['bestStreak'], game['currentStreak'])
+        user['lastWinMessage'] = message.clean_content
 
         game['statistics'][message.author.id] = user
 

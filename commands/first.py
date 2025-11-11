@@ -1,9 +1,10 @@
-import discord, json, os
+import discord, io, json, os, requests
 from discord.ext import commands as cmds
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pytz import timezone as tz
-from Global import Permission, Client, none
+from PIL import Image, ImageDraw, ImageOps
+from Global import Permission, Font, Client, none
 
 
 description = """(Moderator Only) Opens menu for controlling the First game. | (All Users) Show rank for you or another user in the First game."""
@@ -53,8 +54,42 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     """
     if not await Permission.check(ctx.message, permission, ctx): return
 
-    if not user: user = ctx.author
-    return await ctx.send(f"> This is a test :) {user}", ephemeral=True, allowed_mentions=none)
+    try:
+        with open(f"./games/first/{ctx.guild.id}.json") as file_in: game = json.load(file_in)
+    except: return await ctx.reply("> The First game isn't even enabled here!", ephemeral=True)
+    if not user:
+        user = ctx.author
+        if str(user.id) not in game['statistics']: return await ctx.reply("You haven't placed yet! Try winning a round *first*. verbal wink", silent=True, allowed_mentions=none)
+    else:
+        if str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id} hasn't place in this server's First game!", silent=True, allowed_mentions=none)
+
+    # Anchor points:
+    # Name: 352, 19
+    # Place: 262, 20 | (262, 28) > (67, 25); 296x 20y
+
+    session = requests.session()
+    try: icon = Image.open(io.BytesIO(session.get(user.avatar.url, stream=True).content))
+    except: icon = Image.open("./http/res/images/404.png")
+    icon = icon.convert("RGBA").resize((232,232))
+    mask = Image.new("L", (232,232)); mask_draw = ImageDraw.Draw(mask)
+    mask_draw.circle(xy=(116,116), radius=116, fill=255)
+    icon.putalpha(mask)
+
+    sorted_stats = dict(sorted(game['statistics'].items(), key=lambda x: (x[1]['wins'], x[1]['totalPoints']), reverse=True))
+    place = f"#{[_ for _ in sorted_stats].index(str(user.id)) + 1}"
+
+    base = Image.open("./games/first/resources/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(base)
+
+    base.paste(icon, (29,29, 29+232,29+232), icon)
+
+    _, _, w, h = draw.textbbox((0,0), text=place, font=Font.dm_sans_24)
+    draw.text(text=place,     xy=(262+34-(w/2), 20), fill=Font.white, font=Font.dm_sans_24)
+    draw.text(text=user.name, xy=(352, 19),          fill=Font.white, font=Font.dm_sans_24)
+
+    with io.BytesIO() as bytesIO:
+        base.save(bytesIO, 'PNG')
+        bytesIO.seek(0)
+        await ctx.reply('', file=discord.File(bytesIO, filename='card.png'), silent=True, allowed_mentions=none)
 
 
 @first.command(name="start")

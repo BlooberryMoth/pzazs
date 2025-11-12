@@ -23,7 +23,8 @@ async def handle(message: discord.Message):
             "totalPoints": 0,
             "bestStreak":  0,
             "firstPoint":  str(today.date()),
-            "lastPoint":   str(today.date())
+            "lastPoint":   str(today.date()),
+            "lastWinMessage": ""
         }
     else: user = game['statistics'][str(message.author.id)]
 
@@ -31,6 +32,7 @@ async def handle(message: discord.Message):
     user['totalPoints'] += 1
     user['bestStreak'] = max(user['bestStreak'], game['currentStreak'])
     user['lastPoint'] = str(today.date())
+    user['lastWinMessage'] = message.clean_content
 
     game['statistics'][str(message.author.id)] = user
 

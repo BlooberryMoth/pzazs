@@ -211,13 +211,13 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
 
         if (curr_date - last_date).days > 1: game['previousWinner'] = game['currentWinner'] = None
         if [curr_date.year, curr_date.month] != [last_date.year, last_date.month]:
-            highest_score = max([game['statistics'][userID]['points'] for userID in game['statistics']] + [0])
+            highest_score = max([game['statistics'][user_ID]['points'] for user_ID in game['statistics']] + [0])
             last_month_winner = []
-            for userID in game['statistics']:
-                if game['statistics'][userID]['points'] == highest_score and highest_score:
-                    game['statistics'][userID]['wins'] += 1
-                    last_month_winner += [int(userID)]
-                game['statistics'][userID]['points'] = 0
+            for user_ID in game['statistics']:
+                if game['statistics'][user_ID]['points'] == highest_score and highest_score:
+                    game['statistics'][user_ID]['wins'] += 1
+                    last_month_winner += [int(user_ID)]
+                game['statistics'][user_ID]['points'] = 0
             game['lastMonthWinner'] = last_month_winner
 
         game['previousWinner'] = game['currentWinner']
@@ -225,7 +225,7 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
         if game['currentWinner'] == game['previousWinner']: game['currentStreak'] += 1
         else: game['currentStreak'] = 1
 
-        if message.author.id not in game['statistics']:
+        if str(message.author.id) not in game['statistics']:
             user = {     
                 "wins":        0,
                 "points":      0,
@@ -235,17 +235,17 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
                 "lastPoint":   str(curr_date),
                 "lastWinMessage": ""
             }
-        else: user = game['statistics'][message.author.id]
+        else: user = game['statistics'][str(message.author.id)]
 
-        if message.author.id not in graph: graph[message.author.id] = [[message.id, str(curr_date)]]
-        else: graph[message.author.id] += [[message.id, str(curr_date)]]
+        if str(message.author.id) not in graph: graph[str(message.author.id)] = [[message.id, str(curr_date)]]
+        else: graph[str(message.author.id)] += [[message.id, str(curr_date)]]
 
         user['points'] += 1
         user['totalPoints'] += 1
         user['bestStreak'] = max(user['bestStreak'], game['currentStreak'])
         user['lastWinMessage'] = message.clean_content
 
-        game['statistics'][message.author.id] = user
+        game['statistics'][str(message.author.id)] = user
 
         last_date = curr_date
 
@@ -254,13 +254,13 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
         game['currentWinner'] = None
     if (today - curr_date).days > 1: game['previousWinner'] = None
     if [today.year, today.month] != [curr_date.year, curr_date.month]:
-        highest_score = max([game['statistics'][userID]['points'] for userID in game['statistics']] + [0])
+        highest_score = max([game['statistics'][user_ID]['points'] for user_ID in game['statistics']] + [0])
         last_month_winner = []
-        for userID in game['statistics']:
-            if game['statistics'][userID]['points'] == highest_score and highest_score:
-                game['statistics'][userID]['wins'] += 1
-                last_month_winner += [int(userID)]
-            game['statistics'][userID]['points'] = 0
+        for user_ID in game['statistics']:
+            if game['statistics'][user_ID]['points'] == highest_score and highest_score:
+                game['statistics'][user_ID]['wins'] += 1
+                last_month_winner += [int(user_ID)]
+            game['statistics'][user_ID]['points'] = 0
         game['lastMonthWinner'] = last_month_winner
     if rd(today.replace(day=1), curr_date.replace(day=1)).months > 1: game['lastMonthWinner'] = []
 

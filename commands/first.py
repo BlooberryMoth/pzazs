@@ -81,7 +81,7 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     best_streak      = str(game['statistics'][str(user.id)]['bestStreak'])
     first_point      =     game['statistics'][str(user.id)]['firstPoint']
     last_point       =     game['statistics'][str(user.id)]['lastPoint']
-    last_win_message =     game['statistics'][str(user.id)]['lastWinMessage']
+    last_win_message = f"\"{game['statistics'][str(user.id)]['lastWinMessage']}\""
 
     # Sort players to find the rank of the selected user.
     sorted_stats = dict(sorted(game['statistics'].items(), key=lambda x: (x[1]['wins'], x[1]['totalPoints']), reverse=True))
@@ -90,7 +90,7 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     # Open the base card.
     card = Image.open("./games/first/resources/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(card)
     card.paste(icon, (29,29, 29+232,29+232), icon) # Put player's icon.
-    _, _, w, h = draw.textbbox   ((0,0), text=place, font=Font.dm_sans_24) # Used to center the text of the placement (#1 or #28).
+    _, _, w, h = draw.textbbox((0,0), text=place, font=Font.dm_sans_24) # Used to center the text of the placement (#1 or #28).
     draw.text(text=place,        xy=(262+34-(w/2), 20), fill=Font.white, font=Font.dm_sans_24) # Center placement text with X + dX/2 - w/2, where dX is the width of the container you center inside of.
     draw.text(text=user.name,    xy=(352, 19),          fill=Font.white, font=Font.dm_sans_24)
     draw.text(text=points,       xy=(640, 80),          fill=Font.white, font=Font.dm_sans_24)
@@ -99,6 +99,9 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     draw.text(text=best_streak,  xy=(549, 235),         fill=Font.white, font=Font.dm_sans_24)
     draw.text(text=first_point,  xy=(531, 287),         fill=Font.white, font=Font.dm_sans_24)
     draw.text(text=last_point,   xy=(528, 338),         fill=Font.white, font=Font.dm_sans_24)
+    _, _, w, h = draw.textbbox((0,0), text=last_win_message, font=Font.dm_sans_24)
+    draw.text(text=last_win_message, xy=(39+(212/2)-(w/4), 311+(70/2)-(h/3)), fill=Font.white, font=Font.gg_sans_14)
+
 
     with io.BytesIO() as bytesIO:
         card.save(bytesIO, 'PNG')
@@ -233,7 +236,8 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
                 "bestStreak":  0,
                 "firstPoint":  str(curr_date),
                 "lastPoint":   str(curr_date),
-                "lastWinMessage": ""
+                "lastWinMessage": "",
+                "streakBrokenBy": 0
             }
         else: user = game['statistics'][str(message.author.id)]
 

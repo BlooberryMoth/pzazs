@@ -94,3 +94,4 @@ class CommandScrollMenu(discord.ui.View):
 class Font:
     white = (255,255,255)
     dm_sans_24 = ImageFont.truetype("./games/first/resources/fonts/DM Sans Black.ttf", size=24/3*4)
+    gg_sans_14 = ImageFont.truetype("./games/first/resources/fonts/GG Sans Normal.ttf", size=14/3*4)

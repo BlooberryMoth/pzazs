@@ -18,20 +18,20 @@ async def handle(message: discord.Message):
     today = dt.now(tz(game['timezone']))
     if str(message.author.id) not in game['statistics']:
         user = {
-            "wins":        0,
-            "points":      0,
-            "totalPoints": 0,
-            "bestStreak":  0,
-            "firstPoint":  str(today.date()),
-            "lastPoint":   str(today.date()),
+            "wins":           0,
+            "points":         0,
+            "totalPoints":    0,
+            "bestStreak":     0,
+            "firstPoint":     str(today.date()),
+            "lastPoint":      str(today.date()),
             "lastWinMessage": ""
         }
     else: user = game['statistics'][str(message.author.id)]
 
-    user['points'] += 1
-    user['totalPoints'] += 1
-    user['bestStreak'] = max(user['bestStreak'], game['currentStreak'])
-    user['lastPoint'] = str(today.date())
+    user['points']        += 1
+    user['totalPoints']   += 1
+    user['bestStreak']     = max(user['bestStreak'], game['currentStreak'])
+    user['lastPoint']      = str(today.date())
     user['lastWinMessage'] = message.clean_content
 
     game['statistics'][str(message.author.id)] = user

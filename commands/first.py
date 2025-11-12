@@ -230,12 +230,12 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
 
         if str(message.author.id) not in game['statistics']:
             user = {     
-                "wins":        0,
-                "points":      0,
-                "totalPoints": 0,
-                "bestStreak":  0,
-                "firstPoint":  str(curr_date),
-                "lastPoint":   str(curr_date),
+                "wins":           0,
+                "points":         0,
+                "totalPoints":    0,
+                "bestStreak":     0,
+                "firstPoint":     str(curr_date),
+                "lastPoint":      str(curr_date),
                 "lastWinMessage": "",
                 "streakBrokenBy": 0
             }
@@ -244,9 +244,10 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
         if str(message.author.id) not in graph: graph[str(message.author.id)] = [[message.id, str(curr_date)]]
         else: graph[str(message.author.id)] += [[message.id, str(curr_date)]]
 
-        user['points'] += 1
-        user['totalPoints'] += 1
-        user['bestStreak'] = max(user['bestStreak'], game['currentStreak'])
+        user['points']        += 1
+        user['totalPoints']   += 1
+        user['bestStreak']     = max(user['bestStreak'], game['currentStreak'])
+        user['lastPoint']      = str(curr_date)
         user['lastWinMessage'] = message.clean_content
 
         game['statistics'][str(message.author.id)] = user

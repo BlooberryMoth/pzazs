@@ -4,7 +4,7 @@ from Global import Client
 
 async def handle(ctx: discord.RawReactionClearEvent):
     try:
-        with open(f'./autoroles/{ctx.guild_id}.json') as file_in: messages = json.load(file_in); assert isinstance(messages, list)
+        with open(f'./features/autoroles/{ctx.guild_id}.json') as file_in: messages = json.load(file_in); assert isinstance(messages, list)
         message = [message for message in messages if message['messageID'] == ctx.message_id][0]
     except: return
 

@@ -13,14 +13,14 @@ def execute():
         till = then - now
         time.sleep(float(f'{till.seconds}.{till.microseconds}'))
 
-        for file in os.listdir('./games/first'):
+        for file in os.listdir('./features/games/first'):
             if file.endswith('.json') and not file.endswith('_graph.json'):
-                with open(f'./games/first/{file}') as file_in: game = json.load(file_in)
+                with open(f'./features/games/first/{file}') as file_in: game = json.load(file_in)
                 now_en_loc = then.astimezone(tz(game['timezone']))
                 if now_en_loc.hour or now_en_loc.minute: continue
                 game['previousWinner'] = game['currentWinner']
                 game['currentWinner'] = None
-                with open(f'./games/first/{file}', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
+                with open(f'./features/games/first/{file}', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
 
                 if now_en_loc.day == 1:
                     highest_score = max([game['statistics'][userID]['points'] for userID in game['statistics']] + [0])
@@ -32,6 +32,6 @@ def execute():
                         game['statistics'][userID]['points'] = 0
                     game['lastMonthWinner'] = last_month_winner
                 
-                with open(f'./games/first/{file}', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
+                with open(f'./features/games/first/{file}', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
                 file_out.close()
                 LOG.info(f"Next round of First started for {Client.get_guild(int(file.removesuffix('.json'))).name}")

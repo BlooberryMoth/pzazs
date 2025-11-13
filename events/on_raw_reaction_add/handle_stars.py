@@ -4,9 +4,9 @@ from Global import Client, none
 
 
 async def handle(ctx: discord.RawReactionActionEvent):
-    if ctx.emoji.name != '⭐' or not os.path.exists(f'./starboards/{ctx.guild_id}.json'): return
+    if ctx.emoji.name != '⭐' or not os.path.exists(f'./features/starboards/{ctx.guild_id}.json'): return
 
-    with open(f'./starboards/{ctx.guild_id}.json') as file_in: starboard = json.load(file_in)
+    with open(f'./features/starboards/{ctx.guild_id}.json') as file_in: starboard = json.load(file_in)
     if ctx.message_id in starboard['messageCache'] or ctx.channel_id == starboard['channelID']: return
 
     guild          = Client.get_guild(ctx.guild_id)
@@ -17,7 +17,7 @@ async def handle(ctx: discord.RawReactionActionEvent):
 
     if star_reactions[0].count >= starboard['minimumReactions']:
         starboard['messageCache'] = starboard['messageCache'][-24:] + [message.id]
-        with open(f'./starboards/{ctx.guild_id}.json', 'w') as file_out: file_out.write(json.dumps(starboard, indent=4))
+        with open(f'./features/starboards/{ctx.guild_id}.json', 'w') as file_out: file_out.write(json.dumps(starboard, indent=4))
 
         channel = guild.get_channel(starboard['channelID'])
         if not channel: return await message.reply(f"Unable to find/access the Starboard channel!", allowed_mentions=none, silent=True)

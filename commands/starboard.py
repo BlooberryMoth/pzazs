@@ -1,6 +1,6 @@
 import discord, json, os
 from discord.ext import commands as cmds
-from Global import Permission, reply, Client, none
+from Global import Permission, Client, none
 
 
 description = """(Moderator Only) Enables or disables the Starboard."""
@@ -43,27 +43,27 @@ async def _enable(ctx: cmds.Context, channel: discord.TextChannel, minimum_stars
     minimum_stars: int=3
         Minimum number of reactions needed for a Star to be posted.
     """
-    if not await check_permission(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx.message, permission, ctx): raise PermissionError
     if not channel: return await ctx.send(f"> You need to specify a channel for Stars to be posted to.", ephemeral=True)
     if not minimum_stars: minimum_stars = 3
 
-    if os.path.exists(f'./starboards/{ctx.guild.id}.json'):
-        with open(f'./starboards/{ctx.guild.id}.json') as file_in: board = json.load(file_in)
+    if os.path.exists(f'./features/starboards/{ctx.guild.id}.json'):
+        with open(f'./features/starboards/{ctx.guild.id}.json') as file_in: board = json.load(file_in)
     else: board = { "messageCache": [] }
 
     board['channelID'] = channel.id
     board['minimumReacts'] = minimum_stars
     
-    with open(f'./starboards/{ctx.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(board, indent=4))
+    with open(f'./features/starboards/{ctx.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(board, indent=4))
     await ctx.send(f"Enabled Starboard for {ctx.guild.name} in <#{channel.id}>", silent=True)
 
 
 @starboard.command(name="disable")
 async def _disable(ctx: cmds.Context) -> None:
     """(Moderator Only) Disables the Starboard for the server."""
-    if not await check_permission(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx.message, permission, ctx): raise PermissionError
 
-    if not os.path.exists(f'./starboards/{ctx.guild.id}.json'): return await ctx.send(f"Starboard isn't even enabled here!", ephemeral=True)
+    if not os.path.exists(f'./features/starboards/{ctx.guild.id}.json'): return await ctx.send(f"Starboard isn't even enabled here!", ephemeral=True)
 
-    os.remove(f'./starboards/{ctx.guild.id}.json')
+    os.remove(f'./features/starboards/{ctx.guild.id}.json')
     await ctx.send(f"Disabled Starboard for {ctx.guild.name}.", silent=True)

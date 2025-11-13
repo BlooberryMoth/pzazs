@@ -15,7 +15,7 @@ async def handle(message: discord.Message, args: list=None, ctx: cmds.Context=No
     response = await reply("> Loading...", message=message, ctx=ctx)
 
     try:
-        with open(f'./autoroles/{message.guild.id}.json') as file_in: messages = json.load(file_in)
+        with open(f'./features/autoroles/{message.guild.id}.json') as file_in: messages = json.load(file_in)
     except: messages = []
 
     view = AutoroleMessagesMenu(response, message.author, messages)
@@ -60,7 +60,7 @@ class AutoroleMessagesMenu(CommandScrollMenu):
         except: pass
 
         self.items.pop(self.position)
-        with open(f'./autoroles/{interaction.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
+        with open(f'./features/autoroles/{interaction.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
 
         self.move_position(-1)
         await interaction.response.edit_message(embeds=[self.get_page()], view=self)
@@ -109,7 +109,7 @@ class AutoroleMessagesMenu(CommandScrollMenu):
 
         self.position = len(self.items)-1
         
-        with open(f'./autoroles/{interaction.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
+        with open(f'./features/autoroles/{interaction.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
         await update(self.items[self.position]['roles'], new_autorole['title'], message)
 
         view = AutoroleRolesSubmenu(self, message)
@@ -174,7 +174,7 @@ class AutoroleRolesSubmenu(CommandScrollMenu):
         self.interact(interaction)
 
         self.items.pop(self.position)
-        with open(f'./autoroles/{interaction.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
+        with open(f'./features/autoroles/{interaction.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
         await update(self.items, self.parent_menu.items[self.parent_menu.position]['title'], self.message)
 
         self.move_position(-1)
@@ -235,7 +235,7 @@ class AutoroleRolesSubmenu(CommandScrollMenu):
         await response.delete()
 
         self.parent_menu.items[self.parent_menu.position]['roles'] = self.items
-        with open(f'./autoroles/{interaction.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(self.parent_menu.items, indent=4))
+        with open(f'./features/autoroles/{interaction.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(self.parent_menu.items, indent=4))
         await update(self.items, self.parent_menu.items[self.parent_menu.position]['title'], self.message)
 
         self.move_position(-self.position)

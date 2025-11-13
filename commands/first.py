@@ -55,7 +55,7 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     if not await Permission.check(ctx.message, permission, ctx): return
 
     try:
-        with open(f"./games/first/{ctx.guild.id}.json") as file_in: game = json.load(file_in)
+        with open(f"./features/games/first/{ctx.guild.id}.json") as file_in: game = json.load(file_in)
     except: return await ctx.reply("> The First game isn't even enabled here!", ephemeral=True)
     if not user:
         user = ctx.author
@@ -123,9 +123,9 @@ async def _disable(ctx: cmds.Context):
         Context
     """
     if not await Permission.check(ctx.message, Permission.MODERATOR, ctx): return
-    if not os.path.exists(f'./games/first/{ctx.guild.id}.json'): return await ctx.send("> The First game isn't even enabled here!", ephemeral=True)
+    if not os.path.exists(f'./features/games/first/{ctx.guild.id}.json'): return await ctx.send("> The First game isn't even enabled here!", ephemeral=True)
 
-    os.remove(f'./games/first/{ctx.guild.id}.json')
+    os.remove(f'./features/games/first/{ctx.guild.id}.json')
     await ctx.send(f"> Disabled First game for {ctx.guild.name}.", silent=True)
 
 
@@ -142,7 +142,7 @@ async def _resync(ctx: cmds.Context):
     if not await Permission.check(ctx.message, Permission.MODERATOR, ctx): return
 
     try:
-        with open(f'./games/first/{ctx.guild.id}.json') as file_in: game = json.load(file_in)
+        with open(f'./features/games/first/{ctx.guild.id}.json') as file_in: game = json.load(file_in)
     except: return await ctx.send("> The First game isn't even enabled here!", ephemeral=True)
 
     channel = ctx.guild.get_channel_or_thread(game['channelID'])
@@ -235,8 +235,8 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
         game['lastMonthWinner'] = last_month_winner
     if rd(today.replace(day=1), curr_date.replace(day=1)).months > 1: game['lastMonthWinner'] = []
 
-    with open(f'./games/first/{channel.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
-    with open(f'./games/first/{channel.guild.id}_graph.json', 'w') as file_out: file_out.write(json.dumps(graph))
+    with open(f'./features/games/first/{channel.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
+    with open(f'./features/games/first/{channel.guild.id}_graph.json', 'w') as file_out: file_out.write(json.dumps(graph))
 
 
 class FirstLeaderboardMenu(CommandScrollMenu):
@@ -300,7 +300,7 @@ class FirstLeaderboardMenu(CommandScrollMenu):
         last_win_message =f"\"{self.statistics[str(user_ID)]['lastWinMessage']}\""
 
         # Open the base card.
-        card = Image.open("./games/first/resources/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(card)
+        card = Image.open("./features/resources/first/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(card)
         card.paste(icon, (29,29, 29+232,29+232), icon) # Put player's icon.
         _, _, w, h = draw.textbbox((0,0), text=place, font=Font.dm_sans_24) # Used to center the text of the placement (#1 or #28).
         draw.text(text=place,        xy=(262+34-(w/2), 20), fill=Font.white, font=Font.dm_sans_24) # Center placement text with X + dX/2 - w/2, where dX is the width of the container you center inside of.

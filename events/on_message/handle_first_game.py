@@ -5,12 +5,12 @@ from Global import none
 
 
 async def handle(message: discord.Message):
-    if 'first' not in message.content.lower() or not os.path.exists(f'./games/first/{message.guild.id}.json'): return
+    if 'first' not in message.content.lower() or not os.path.exists(f'./features/games/first/{message.guild.id}.json'): return
 
-    with open(f'./games/first/{message.guild.id}.json') as file_in: game = json.load(file_in)
+    with open(f'./features/games/first/{message.guild.id}.json') as file_in: game = json.load(file_in)
     if message.channel.id != game['channelID'] or game['currentWinner']: return
     game['currentWinner'] = message.author.id
-    with open(f'./games/first/{message.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
+    with open(f'./features/games/first/{message.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
 
     if game['currentWinner'] == game['previousWinner']: game['currentStreak'] += 1
     else: game['currentStreak'] = 1
@@ -39,4 +39,4 @@ async def handle(message: discord.Message):
     midnight = dt.now(tz(game['timezone'])).replace(hour=0, minute=0, second=0, microsecond=0)
     await message.reply(f"And today's winner... <@{message.author.id}>!! (exactly {today - midnight} after midnight).", allowed_mentions=none)
 
-    with open(f'./games/first/{message.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
+    with open(f'./features/games/first/{message.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))

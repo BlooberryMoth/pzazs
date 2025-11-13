@@ -88,7 +88,7 @@ class CommandScrollMenu(discord.ui.View):
     async def on_timeout(self):
         if self.timer.current_loop: await self.attached_message.edit(content="> Timed out; Closing dialogue.", embeds=[], view=None)
 
-    def get_embed(self) -> discord.Embed: ...
+    def get_page(self) -> discord.Embed: ...
 
 
 class Font:

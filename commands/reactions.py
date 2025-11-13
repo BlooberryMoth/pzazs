@@ -19,7 +19,7 @@ async def handle(message: discord.Message, args: list=None, ctx: commands.Contex
     except: reactions = []
 
     view = MessageReactionsMenu(response, message.author, reactions)
-    await response.edit(content="", embeds=[view.get_embed()], view=view)
+    await response.edit(content="", embeds=[view.get_page()], view=view)
 
 
 @Client.hybrid_command()
@@ -47,7 +47,7 @@ class MessageReactionsMenu(CommandScrollMenu):
         self.interact(interaction)
 
         self.move_position(-1)
-        await interaction.response.edit_message(embeds=[self.get_embed()], view=self)
+        await interaction.response.edit_message(embeds=[self.get_page()], view=self)
 
     @discord.ui.button(emoji="➖")
     async def button_rmv(self, interaction: discord.Interaction, button: discord.Button):
@@ -57,7 +57,7 @@ class MessageReactionsMenu(CommandScrollMenu):
         with open(f'./reactions/{self.original_author.id}.json', 'w') as file_out: file_out.write(json.dumps(self.items, indent=4))
 
         self.move_position(-1)
-        await interaction.response.edit_message(embeds=[self.get_embed()], view=self)
+        await interaction.response.edit_message(embeds=[self.get_page()], view=self)
 
     @discord.ui.button(emoji='*️⃣')
     async def button_edt(self, interaction: discord.Interaction, button: discord.Button):
@@ -99,14 +99,14 @@ class MessageReactionsMenu(CommandScrollMenu):
 
         self.move_position(-self.position)
         self.move_position(len(self.items)-1)
-        await interaction.message.edit(embeds=[self.get_embed()], view=self)
+        await interaction.message.edit(embeds=[self.get_page()], view=self)
 
     @discord.ui.button(emoji='▶️')
     async def button_nxt(self, interaction: discord.Interaction, button: discord.Button):
         self.interact(interaction)
 
         self.move_position(1)
-        await interaction.response.edit_message(embeds=[self.get_embed()], view=self)
+        await interaction.response.edit_message(embeds=[self.get_page()], view=self)
 
 
     def move_position(self, dposition: int) -> None:
@@ -116,7 +116,7 @@ class MessageReactionsMenu(CommandScrollMenu):
         self.button_add.disabled = len(self.items)         >= 10
         self.button_nxt.disabled = self.position + 1       >= len(self.items)
 
-    def get_embed(self) -> discord.Embed:
+    def get_page(self) -> discord.Embed:
         embed = discord.Embed(color=0x69a9d9,
                               title=f"Reaction __{self.position + 1}__ of {len(self.items)}")
         embed.set_author(name=f"{self.original_author}'s reactions", icon_url=self.original_author.avatar.url)
@@ -177,5 +177,5 @@ class RequirementsModal(discord.ui.Modal):
 
         with open(f'./reactions/{interaction.user.id}.json', 'w') as file_out: file_out.write(json.dumps(self.view.items, indent=4))
 
-        await self.view.attached_message.edit(content="", embeds=[self.view.get_embed()], view=self.view)
+        await self.view.attached_message.edit(content="", embeds=[self.view.get_page()], view=self.view)
         await interaction.response.defer()

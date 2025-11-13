@@ -1,10 +1,10 @@
 import discord, io, json, os, requests
-from discord.ext import commands as cmds
+from discord.ext import commands as cmds, tasks
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pytz import timezone as tz
-from PIL import Image, ImageDraw, ImageOps
-from Global import Permission, Font, Client, none
+from PIL import Image, ImageDraw
+from Global import Permission, Font, CommandScrollMenu, Client, none
 
 
 description = """(Moderator Only) Opens menu for controlling the First game. | (All Users) Show rank for you or another user in the First game."""
@@ -50,7 +50,7 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     ctx: cmds.Context
         Context
     user: discord.User
-        User
+        User to see the rank of
     """
     if not await Permission.check(ctx.message, permission, ctx): return
 
@@ -63,50 +63,16 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     else:
         if str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id}> hasn't place in this server's First game!", silent=True, allowed_mentions=none)
 
-    response = await ctx.reply("> Loading...", silent=True, allowed_mentions=none)
-
-    # Stream in the image data of the user's icon via requests and BytesIO, resize, and trim border into a circle.
-    session = requests.session()
-    try: icon = Image.open(io.BytesIO(session.get(user.avatar.url, stream=True).content))
-    except: icon = Image.open("./http/res/images/404.png")
-    icon = icon.convert("RGBA").resize((232,232))
-    mask = Image.new("L", (232,232)); mask_draw = ImageDraw.Draw(mask)
-    mask_draw.circle(xy=(116,116), radius=116, fill=255)
-    icon.putalpha(mask)
-
-    # Gather strings for drawing.
-    wins             = str(game['statistics'][str(user.id)]['wins'])
-    points           = str(game['statistics'][str(user.id)]['points'])
-    total_points     = str(game['statistics'][str(user.id)]['totalPoints'])
-    best_streak      = str(game['statistics'][str(user.id)]['bestStreak'])
-    first_point      =     game['statistics'][str(user.id)]['firstPoint']
-    last_point       =     game['statistics'][str(user.id)]['lastPoint']
-    last_win_message = f"\"{game['statistics'][str(user.id)]['lastWinMessage']}\""
+    response = await ctx.reply("> Loading...", silent=True, allowed_mentions=none)    
 
     # Sort players to find the rank of the selected user.
     sorted_stats = dict(sorted(game['statistics'].items(), key=lambda x: (x[1]['wins'], x[1]['totalPoints']), reverse=True))
-    place = f"#{[_ for _ in sorted_stats].index(str(user.id)) + 1}"
+    place = [_ for _ in sorted_stats].index(str(user.id)) + 1
 
-    # Open the base card.
-    card = Image.open("./games/first/resources/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(card)
-    card.paste(icon, (29,29, 29+232,29+232), icon) # Put player's icon.
-    _, _, w, h = draw.textbbox((0,0), text=place, font=Font.dm_sans_24) # Used to center the text of the placement (#1 or #28).
-    draw.text(text=place,        xy=(262+34-(w/2), 20), fill=Font.white, font=Font.dm_sans_24) # Center placement text with X + dX/2 - w/2, where dX is the width of the container you center inside of.
-    draw.text(text=user.name,    xy=(352, 19),          fill=Font.white, font=Font.dm_sans_24)
-    draw.text(text=points,       xy=(640, 80),          fill=Font.white, font=Font.dm_sans_24)
-    draw.text(text=wins,         xy=(561, 132),         fill=Font.white, font=Font.dm_sans_24)
-    draw.text(text=total_points, xy=(555, 183),         fill=Font.white, font=Font.dm_sans_24)
-    draw.text(text=best_streak,  xy=(549, 235),         fill=Font.white, font=Font.dm_sans_24)
-    draw.text(text=first_point,  xy=(531, 287),         fill=Font.white, font=Font.dm_sans_24)
-    draw.text(text=last_point,   xy=(528, 338),         fill=Font.white, font=Font.dm_sans_24)
-    _, _, w, h = draw.textbbox((0,0), text=last_win_message, font=Font.dm_sans_24)
-    draw.text(text=last_win_message, xy=(39+(212/2)-(w/4), 311+(70/2)-(h/3)), fill=Font.white, font=Font.gg_sans_14)
+    view = FirstLeaderboardMenu(response, ctx.author, game['statistics'], [_ for _ in sorted_stats])
+    view.move_position(place)
 
-
-    with io.BytesIO() as bytesIO:
-        card.save(bytesIO, 'PNG')
-        bytesIO.seek(0)
-        await response.edit(content='', attachments=[discord.File(bytesIO, filename='card.png')], allowed_mentions=none)
+    await response.edit(content="", attachments=[await view.get_page()], view=view)    
 
 
 @first.command(name="start")
@@ -271,3 +237,90 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
 
     with open(f'./games/first/{channel.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))
     with open(f'./games/first/{channel.guild.id}_graph.json', 'w') as file_out: file_out.write(json.dumps(graph))
+
+
+class FirstLeaderboardMenu(CommandScrollMenu):
+    def __init__(self, attached_message: discord.Message, original_author: discord.Member, statistics: dict, key: list):
+        super().__init__(attached_message, original_author, key)
+        self.statistics = statistics
+        self.move_position(0)
+
+    @discord.ui.button(emoji='◀️')
+    async def button_prv(self, interaction: discord.Interaction, button: discord.Button):
+        self.interact(interaction)
+
+        self.move_position(-1)
+        await interaction.response.edit_message(attachments=[await self.get_page()], view=self)
+
+
+    @discord.ui.button(emoji='▶️')
+    async def button_nxt(self, interaction: discord.Interaction, button: discord.Button):
+        self.interact(interaction)
+    
+        self.move_position(1)
+        await interaction.response.edit_message(attachments=[await self.get_page()], view=self)
+
+
+    def move_position(self, dposition: int) -> None:
+        self.position = max(0, self.position+dposition)
+        self.button_prv.disabled = not self.position
+        self.button_nxt.disabled = self.position + 1 >= len(self.items) + 1
+
+    async def get_page(self) -> discord.File:
+        if not self.position: return discord.File("./website/http/res/images/website_icon.png", "Coming soon!.png")
+
+
+        user_ID = self.items[self.position - 1]
+        try: user = await Client.fetch_user(user_ID)
+        except:
+            avatar_URL = None
+            name = "Deleted User"
+        else:
+            avatar_URL = user.avatar.url
+            name = user.name
+
+        # Stream in the image data of the user's icon via requests and BytesIO, resize, and trim border into a circle.
+        session = requests.session()
+        try: icon = Image.open(io.BytesIO(session.get(avatar_URL, stream=True).content))
+        except: icon = Image.open("./http/res/images/404.png")
+        icon = icon.convert("RGBA").resize((232,232))
+        mask = Image.new("L", (232,232)); mask_draw = ImageDraw.Draw(mask)
+        mask_draw.circle(xy=(116,116), radius=116, fill=255)
+        icon.putalpha(mask)
+        session.close()
+
+        # Gather strings for drawing.
+        place            = f"#{self.position}"
+        wins             = str(self.statistics[str(user_ID)]['wins'])
+        points           = str(self.statistics[str(user_ID)]['points'])
+        total_points     = str(self.statistics[str(user_ID)]['totalPoints'])
+        best_streak      = str(self.statistics[str(user_ID)]['bestStreak'])
+        first_point      =     self.statistics[str(user_ID)]['firstPoint']
+        last_point       =     self.statistics[str(user_ID)]['lastPoint']
+        last_win_message =f"\"{self.statistics[str(user_ID)]['lastWinMessage']}\""
+
+        # Open the base card.
+        card = Image.open("./games/first/resources/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(card)
+        card.paste(icon, (29,29, 29+232,29+232), icon) # Put player's icon.
+        _, _, w, h = draw.textbbox((0,0), text=place, font=Font.dm_sans_24) # Used to center the text of the placement (#1 or #28).
+        draw.text(text=place,        xy=(262+34-(w/2), 20), fill=Font.white, font=Font.dm_sans_24) # Center placement text with X + dX/2 - w/2, where dX is the width of the container you center inside of.
+        draw.text(text=name,    xy=(352, 19),          fill=Font.white, font=Font.dm_sans_24)
+        draw.text(text=points,       xy=(640, 80),          fill=Font.white, font=Font.dm_sans_24)
+        draw.text(text=wins,         xy=(561, 132),         fill=Font.white, font=Font.dm_sans_24)
+        draw.text(text=total_points, xy=(555, 183),         fill=Font.white, font=Font.dm_sans_24)
+        draw.text(text=best_streak,  xy=(549, 235),         fill=Font.white, font=Font.dm_sans_24)
+        draw.text(text=first_point,  xy=(531, 287),         fill=Font.white, font=Font.dm_sans_24)
+        draw.text(text=last_point,   xy=(528, 338),         fill=Font.white, font=Font.dm_sans_24)
+        _, _, w, h = draw.textbbox((0,0), text=last_win_message, font=Font.dm_sans_24)
+        draw.text(text=last_win_message, xy=(39+(212/2)-(w/4), 311+(70/2)-(h/3)), fill=Font.white, font=Font.gg_sans_14)
+
+        with io.BytesIO() as bytesIO:
+            card.save(bytesIO, 'PNG')
+            bytesIO.seek(0)
+            return discord.File(bytesIO, filename='card.png')
+
+    @tasks.loop(seconds=60.0, count=1)
+    async def timer(self): pass
+    @timer.after_loop
+    async def on_timeout(self):
+        if self.timer.current_loop: await self.attached_message.edit(content="", view=None)

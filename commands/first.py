@@ -264,7 +264,7 @@ class FirstLeaderboardMenu(CommandScrollMenu):
     def move_position(self, dposition: int) -> None:
         self.position = max(0, self.position+dposition)
         self.button_prv.disabled = not self.position
-        self.button_nxt.disabled = self.position + 1 >= len(self.items) + 1
+        self.button_nxt.disabled = self.position >= len(self.items)
 
     async def get_page(self) -> discord.File:
         if not self.position: return discord.File("./website/http/res/images/website_icon.png", "Coming soon!.png")

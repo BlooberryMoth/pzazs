@@ -252,6 +252,12 @@ class FirstLeaderboardMenu(CommandScrollMenu):
         self.move_position(-1)
         await interaction.response.edit_message(attachments=[await self.get_page()], view=self)
 
+    @discord.ui.button(emoji='📶')
+    async def button_brd(self, interaction: discord.Interaction, button: discord.Button):
+        self.interact(interaction)
+
+        self.move_position(-self.position)
+        await interaction.response.edit_message(attachments=[await self.get_page()], view=self)
 
     @discord.ui.button(emoji='▶️')
     async def button_nxt(self, interaction: discord.Interaction, button: discord.Button):

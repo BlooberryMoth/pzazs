@@ -57,20 +57,13 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     try:
         with open(f"./features/games/first/{ctx.guild.id}.json") as file_in: game = json.load(file_in)
     except: return await ctx.reply("> The First game isn't even enabled here!", ephemeral=True)
-    if not user:
-        user = ctx.author
-        if str(user.id) not in game['statistics']: return await ctx.reply("You haven't placed yet! Try winning a round *first*. verbal wink", silent=True, allowed_mentions=none)
-    else:
-        if str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id}> hasn't place in this server's First game!", silent=True, allowed_mentions=none)
+    if user and str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id}> hasn't place in this server's First game!", silent=True, allowed_mentions=none)
 
     response = await ctx.reply("> Loading...", silent=True, allowed_mentions=none)    
 
-    # Sort players to find the rank of the selected user.
     sorted_stats = dict(sorted(game['statistics'].items(), key=lambda x: (x[1]['wins'], x[1]['totalPoints']), reverse=True))
-    place = [_ for _ in sorted_stats].index(str(user.id)) + 1
-
     view = FirstLeaderboardMenu(response, ctx.author, game['statistics'], [_ for _ in sorted_stats])
-    view.move_position(place)
+    if user: view.move_position([_ for _ in sorted_stats].index(str(user.id)) + 1)
 
     await response.edit(content="", attachments=[await view.get_page()], view=view)    
 
@@ -103,8 +96,16 @@ async def _start(ctx: cmds.Context,
     if not start_date: start_date = dt.now(tz(timezone)).replace(hour=0, minute=0, second=0, microsecond=0)
     elif start_date == "all": start_date = ctx.guild.created_at.replace(hour=0, minute=0, second=0, microsecond=0)
     else:
-        try: start_date = dt.strptime(start_date, '%Y-%m-%d')
+        try: dt.strptime(start_date, '%Y-%m-%d')
         except: return await ctx.send(f"> Unable to parse starting date \"{start_date}\". Please make sure to format as YYYY-mm-dd", ephemeral=True)
+        else: start_date = dt.now() \
+                .replace(
+                    year   = int(start_date.split('-')[0]),
+                    month  = int(start_date.split('-')[1]),
+                    day    = int(start_date.split('-')[2]),
+                    hour   = 0, minute = 0, second = 0, microsecond = 0,
+                    tzinfo = tz(timezone)
+                )
 
     response = await ctx.send(f"> Building First game statistics from {start_date.date()}. This may take awhile...", silent=True)
     then = dt.now()
@@ -148,7 +149,14 @@ async def _resync(ctx: cmds.Context):
     channel = ctx.guild.get_channel_or_thread(game['channelID'])
     if not channel: return await ctx.send(f"> Unable to find/access channel <#{game['channelID']}>, If may have been deleted.", ephemeral=True)
     timezone = game['timezone']
-    start_date = dt.strptime(game['startDate'], '%Y-%m-%d')
+    start_date = dt.now() \
+        .replace(
+            year   = int(game['startDate'].split('-')[0]),
+            month  = int(game['startDate'].split('-')[1]),
+            day    = int(game['startDate'].split('-')[2]),
+            hour   = 0, minute = 0, second = 0, microsecond = 0,
+            tzinfo = tz(game['timezone'])
+        )
 
     reply = await ctx.send(f"> Rebuilding First game statistics from {start_date.date()}. This may take awhile...", silent=True)
     then = dt.now()
@@ -269,48 +277,32 @@ class FirstLeaderboardMenu(CommandScrollMenu):
 
     def move_position(self, dposition: int) -> None:
         self.position = max(0, self.position+dposition)
-        self.button_prv.disabled = not self.position
+        self.button_prv.disabled = self.button_brd.disabled = not self.position
         self.button_nxt.disabled = self.position >= len(self.items)
 
     async def get_page(self) -> discord.File:
         if not self.position: return discord.File("./website/http/res/images/website_icon.png", "Coming soon!.png")
 
 
-        user_ID = self.items[self.position - 1]
-        try: user = await Client.fetch_user(user_ID)
-        except:
-            avatar_URL = None
-            name = "Deleted User"
-        else:
-            avatar_URL = user.avatar.url
-            name = user.name
-
-        # Stream in the image data of the user's icon via requests and BytesIO, resize, and trim border into a circle.
-        session = requests.session()
-        try: icon = Image.open(io.BytesIO(session.get(avatar_URL, stream=True).content))
-        except: icon = Image.open("./http/res/images/404.png")
-        icon = icon.convert("RGBA").resize((232,232))
-        mask = Image.new("L", (232,232)); mask_draw = ImageDraw.Draw(mask)
-        mask_draw.circle(xy=(116,116), radius=116, fill=255)
-        icon.putalpha(mask)
-        session.close()
+        user_id = self.items[self.position - 1]
+        name, icon = await get_user_details(user_id, (232,232))
 
         # Gather strings for drawing.
         place            = f"#{self.position}"
-        wins             = str(self.statistics[str(user_ID)]['wins'])
-        points           = str(self.statistics[str(user_ID)]['points'])
-        total_points     = str(self.statistics[str(user_ID)]['totalPoints'])
-        best_streak      = str(self.statistics[str(user_ID)]['bestStreak'])
-        first_point      =     self.statistics[str(user_ID)]['firstPoint']
-        last_point       =     self.statistics[str(user_ID)]['lastPoint']
-        last_win_message =f"\"{self.statistics[str(user_ID)]['lastWinMessage']}\""
+        wins             = str(self.statistics[str(user_id)]['wins'])
+        points           = str(self.statistics[str(user_id)]['points'])
+        total_points     = str(self.statistics[str(user_id)]['totalPoints'])
+        best_streak      = str(self.statistics[str(user_id)]['bestStreak'])
+        first_point      =     self.statistics[str(user_id)]['firstPoint']
+        last_point       =     self.statistics[str(user_id)]['lastPoint']
+        last_win_message =f"\"{self.statistics[str(user_id)]['lastWinMessage']}\""
 
         # Open the base card.
         card = Image.open("./features/resources/first/user_card.png").convert("RGBA"); draw = ImageDraw.Draw(card)
         card.paste(icon, (29,29, 29+232,29+232), icon) # Put player's icon.
         _, _, w, h = draw.textbbox((0,0), text=place, font=Font.dm_sans_24) # Used to center the text of the placement (#1 or #28).
         draw.text(text=place,        xy=(262+34-(w/2), 20), fill=Font.white, font=Font.dm_sans_24) # Center placement text with X + dX/2 - w/2, where dX is the width of the container you center inside of.
-        draw.text(text=name,    xy=(352, 19),          fill=Font.white, font=Font.dm_sans_24)
+        draw.text(text=name,         xy=(352, 19),          fill=Font.white, font=Font.dm_sans_24)
         draw.text(text=points,       xy=(640, 80),          fill=Font.white, font=Font.dm_sans_24)
         draw.text(text=wins,         xy=(561, 132),         fill=Font.white, font=Font.dm_sans_24)
         draw.text(text=total_points, xy=(555, 183),         fill=Font.white, font=Font.dm_sans_24)
@@ -330,3 +322,24 @@ class FirstLeaderboardMenu(CommandScrollMenu):
     @timer.after_loop
     async def on_timeout(self):
         if self.timer.current_loop: await self.attached_message.edit(content="", view=None)
+
+
+async def get_user_details(user_id: int, avatar_size: tuple[int, int]) -> tuple[str, any]:
+    try: user = await Client.fetch_user(user_id)
+    except:
+        name = "Deleted User"
+        avatar_url = None
+    else:
+        name = user.name
+        avatar_url = user.avatar.url
+
+    session = requests.session()
+    try: icon = Image.open(io.BytesIO(session.get(avatar_url, stream=True).content))
+    except: icon = Image.open("./features/resources/404.png")
+    icon = icon.convert('RGBA').resize(avatar_size)
+    mask = Image.new("L", (avatar_size)); mask_draw = ImageDraw.Draw(mask)
+    mask_draw.circle(xy=[_/2 for _ in avatar_size], radius=avatar_size[0]/2, fill=255, width=10)
+    icon.putalpha(mask)
+    session.close()
+
+    return name, icon

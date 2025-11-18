@@ -16,6 +16,8 @@ usage = ['rank [@user]', '(MOD) start [#channel] [timezone] [start date]', '(MOD
 async def handle(message: discord.Message, args: list=None, c: cmds.Context=None):
     if not await Permission.check(message, permission, c): raise PermissionError
 
+    # Unlike the other command files, this moves handling to the hybrid group handlers instead of here in this method
+    # I may change the other command files to do the same, but for now they all work fine
     if len(args):
         match args[0]:
             case "rank":
@@ -54,18 +56,20 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     """
     if not await Permission.check(ctx.message, permission, ctx): return
 
+    # Error handling
     try:
         with open(f"./features/games/first/{ctx.guild.id}.json") as file_in: game = json.load(file_in)
     except: return await ctx.reply("> The First game isn't even enabled here!", ephemeral=True)
     if user and str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id}> hasn't place in this server's First game!", silent=True, allowed_mentions=none)
 
-    response = await ctx.reply("> Loading...", silent=True, allowed_mentions=none)    
+    response = await ctx.reply("> Loading...", silent=True, allowed_mentions=none) # Technically, I could use 'ctx.defer()', but I prefer this.
 
+    # Sort the game statistics and put them into the CommandScrollMenu from 'Global.py' as the items
     sorted_stats = dict(sorted(game['statistics'].items(), key=lambda x: (x[1]['wins'], x[1]['totalPoints']), reverse=True))
-    view = FirstLeaderboardMenu(response, ctx.author, game['statistics'], [_ for _ in sorted_stats])
-    if user: view.move_position([_ for _ in sorted_stats].index(str(user.id)) + 1)
+    view = FirstLeaderboardMenu(response, ctx.author, game['statistics'], [_ for _ in sorted_stats]) # + the user IDs as keys
+    if user: view.move_position([_ for _ in sorted_stats].index(str(user.id)) + 1) # Only used if a user is specified, where it will select the specific user's rank card
 
-    await response.edit(content="", attachments=[await view.get_page()], view=view)    
+    await response.edit(content="", attachments=[await view.get_page()], view=view)
 
 
 @first.command(name="start")
@@ -91,21 +95,19 @@ async def _start(ctx: cmds.Context,
     if not channel:  channel  = ctx.channel
     if not timezone: timezone = "UTC"
     else:
-        try: tz(timezone)
+        try: tz(timezone) # Parsing and handling the time zone
         except: return await ctx.send(f"> Unable to parse time zone \"{timezone}\".\n> Use any timezone from [This List](<https://wikipedia.org.wiki.List_of_tz_database_time_zones>) under 'TZ Identifier'", ephemeral=True)
     if not start_date: start_date = dt.now(tz(timezone)).replace(hour=0, minute=0, second=0, microsecond=0)
     elif start_date == "all": start_date = ctx.guild.created_at.replace(hour=0, minute=0, second=0, microsecond=0)
     else:
-        try: dt.strptime(start_date, '%Y-%m-%d')
+        try: start_date = dt.now(tz(timezone)) \
+            .replace(
+                year   = int(start_date.split('-')[0]),
+                month  = int(start_date.split('-')[1]),
+                day    = int(start_date.split('-')[2]),
+                hour = 0, minute = 0, second = 0, microsecond = 0 # How I parse dates with timezones that works 100% of the time
+            )
         except: return await ctx.send(f"> Unable to parse starting date \"{start_date}\". Please make sure to format as YYYY-mm-dd", ephemeral=True)
-        else: start_date = dt.now() \
-                .replace(
-                    year   = int(start_date.split('-')[0]),
-                    month  = int(start_date.split('-')[1]),
-                    day    = int(start_date.split('-')[2]),
-                    hour   = 0, minute = 0, second = 0, microsecond = 0,
-                    tzinfo = tz(timezone)
-                )
 
     response = await ctx.send(f"> Building First game statistics from {start_date.date()}. This may take awhile...", silent=True)
     then = dt.now()
@@ -113,7 +115,7 @@ async def _start(ctx: cmds.Context,
     await response.edit(content=f"> Finished building statistics in {dt.now() - then}")
 
 
-@first.command(name="disable")
+@first.command(name="disable") # I hope all of this is pretty self explanatory
 async def _disable(ctx: cmds.Context):
     """
     (Moderator Only) Used to disabled the First game, removing all points from everyone in the server.
@@ -147,16 +149,16 @@ async def _resync(ctx: cmds.Context):
     except: return await ctx.send("> The First game isn't even enabled here!", ephemeral=True)
 
     channel = ctx.guild.get_channel_or_thread(game['channelID'])
-    if not channel: return await ctx.send(f"> Unable to find/access channel <#{game['channelID']}>, If may have been deleted.", ephemeral=True)
+    if not channel: return await ctx.send(f"> Unable to find/access channel <#{game['channelID']}>, It may have been deleted.", ephemeral=True)
+
     timezone = game['timezone']
-    start_date = dt.now() \
+    start_date = dt.now(tz(game['timezone'])) \
         .replace(
             year   = int(game['startDate'].split('-')[0]),
             month  = int(game['startDate'].split('-')[1]),
             day    = int(game['startDate'].split('-')[2]),
-            hour   = 0, minute = 0, second = 0, microsecond = 0,
-            tzinfo = tz(game['timezone'])
-        )
+            hour = 0, minute = 0, second = 0, microsecond = 0
+        ) # Same weird way I have to parse dates with timezones
 
     reply = await ctx.send(f"> Rebuilding First game statistics from {start_date.date()}. This may take awhile...", silent=True)
     then = dt.now()
@@ -165,8 +167,8 @@ async def _resync(ctx: cmds.Context):
 
 
 async def build_statistics(channel: discord.TextChannel, timezone: str, start_date: dt) -> None:
-    today = dt.now(tz(timezone)).date()
-    game = {
+    today = dt.now(tz(timezone)).date() # This is just to finish building the statistics if anyone hasn't played today.
+    game = { # Outline of the data
         "currentWinner":   None,
         "previousWinner":  None,
         "currentStreak":   0,
@@ -177,19 +179,19 @@ async def build_statistics(channel: discord.TextChannel, timezone: str, start_da
         "statistics":      {}
     }
 
-    graph = {}
+    graph = {} # This is data that will be used later by the website
 
     curr_date = last_date = start_date.date()
     async for message in channel.history(limit=None, after=start_date, oldest_first=True):
         if message.author.bot: continue
         curr_date = message.created_at.astimezone(tz(timezone)).date()
         if curr_date == last_date or 'first' not in message.content.lower(): continue
-        if 'first' not in message.content.lower(): continue
+        if 'first' not in message.content.lower(): continue # Is this necessary? I honestly have no clue. Scared to touch it
 
         if (curr_date - last_date).days > 1: game['previousWinner'] = game['currentWinner'] = None
         if [curr_date.year, curr_date.month] != [last_date.year, last_date.month]:
             highest_score = max([game['statistics'][user_ID]['points'] for user_ID in game['statistics']] + [0])
-            last_month_winner = []
+            last_month_winner = [] # All of this is to get the winner(s) of the month
             for user_ID in game['statistics']:
                 if game['statistics'][user_ID]['points'] == highest_score and highest_score:
                     game['statistics'][user_ID]['wins'] += 1
@@ -281,11 +283,11 @@ class FirstLeaderboardMenu(CommandScrollMenu):
         self.button_nxt.disabled = self.position >= len(self.items)
 
     async def get_page(self) -> discord.File:
-        if not self.position: return discord.File("./website/http/res/images/website_icon.png", "Coming soon!.png")
+        if not self.position: return self.get_leaderboard_card()
 
 
         user_id = self.items[self.position - 1]
-        name, icon = await get_user_details(user_id, (232,232))
+        name, icon = await self.get_user_details(user_id, (232,232))
 
         # Gather strings for drawing.
         place            = f"#{self.position}"
@@ -317,29 +319,33 @@ class FirstLeaderboardMenu(CommandScrollMenu):
             bytesIO.seek(0)
             return discord.File(bytesIO, filename='card.png')
 
+    async def get_leaderboard_card(self) -> discord.File:
+        return discord.File("./website/http/res/images/website_icon.png", "Coming soon!.png")
+
+
+    async def get_user_details(self, user_id: int, avatar_size: tuple[int, int]) -> tuple[str, Image.Image]:
+        try: user = await Client.fetch_user(user_id)
+        except:
+            name = "Deleted User"
+            avatar_url = None
+        else:
+            name = user.name
+            avatar_url = user.avatar.url
+
+        session = requests.session()
+        try: icon = Image.open(io.BytesIO(session.get(avatar_url, stream=True).content))
+        except: icon = Image.open("./features/resources/404.png")
+        icon = icon.convert('RGBA').resize(avatar_size)
+        mask = Image.new("L", (avatar_size)); mask_draw = ImageDraw.Draw(mask)
+        mask_draw.circle(xy=[_/2 for _ in avatar_size], radius=avatar_size[0]/2, fill=255, width=10)
+        icon.putalpha(mask)
+        session.close()
+
+        return name, icon
+    
+
     @tasks.loop(seconds=60.0, count=1)
     async def timer(self): pass
     @timer.after_loop
     async def on_timeout(self):
         if self.timer.current_loop: await self.attached_message.edit(content="", view=None)
-
-
-async def get_user_details(user_id: int, avatar_size: tuple[int, int]) -> tuple[str, any]:
-    try: user = await Client.fetch_user(user_id)
-    except:
-        name = "Deleted User"
-        avatar_url = None
-    else:
-        name = user.name
-        avatar_url = user.avatar.url
-
-    session = requests.session()
-    try: icon = Image.open(io.BytesIO(session.get(avatar_url, stream=True).content))
-    except: icon = Image.open("./features/resources/404.png")
-    icon = icon.convert('RGBA').resize(avatar_size)
-    mask = Image.new("L", (avatar_size)); mask_draw = ImageDraw.Draw(mask)
-    mask_draw.circle(xy=[_/2 for _ in avatar_size], radius=avatar_size[0]/2, fill=255, width=10)
-    icon.putalpha(mask)
-    session.close()
-
-    return name, icon

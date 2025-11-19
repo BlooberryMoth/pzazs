@@ -15,7 +15,7 @@ async def handle(message: discord.Message, args: list=None, c: commands.Context=
     if not await Permission.check(message, permission, c): raise PermissionError
     
     response = f"Pong! Response in {dt.now(tz('UTC')) - message.created_at}"
-    if c: await c.send(response, allowed_mendtions=none, silent=True)
+    if c: await c.send(response, allowed_mentions=none, silent=True)
     else: await message.reply(response, allowed_mentions=none, silent=True)
 
 

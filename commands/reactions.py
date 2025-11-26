@@ -1,6 +1,6 @@
 import discord, json
 from discord.ext import commands
-from Global import CommandScrollMenu, Permission, reply, Client, request_emoji_embed
+from Global import CommandScrollMenu, Permission, Client, none, request_emoji_embed
 
 
 description = """Adds an emoji reaction to a message that you send."""
@@ -9,17 +9,7 @@ aliases = ['reactions', 'reacts']
 usage = []
 
 
-async def handle(message: discord.Message, args: list=None, ctx: commands.Context=None):
-    if not await Permission.check(message, permission, ctx): raise PermissionError
-
-    response = await reply("> Loading...", message=message, ctx=ctx)
-
-    try:
-        with open(f'./features/reactions/{message.author.id}.json') as file_in: reactions = json.load(file_in)
-    except: reactions = []
-
-    view = MessageReactionsMenu(response, message.author, reactions)
-    await response.edit(content="", embeds=[view.get_page()], view=view)
+async def handle(message: discord.Message, args: list=None, ctx: commands.Context=None): await reactions(await Client.get_context(message))
 
 
 @Client.hybrid_command()
@@ -32,8 +22,16 @@ async def reactions(ctx: commands.Context):
     ctx: cmds.Context
         Context
     """
-    try: await handle(ctx.message, ctx=ctx)
-    except PermissionError: return
+    if not await Permission.check(ctx, permission): raise PermissionError
+
+    response = await ctx.reply("> Loading...", allowed_mentions=none, silent=True)
+
+    try:
+        with open(f'./features/reactions/{ctx.author.id}.json') as file_in: reactions = json.load(file_in)
+    except: reactions = []
+
+    view = MessageReactionsMenu(response, ctx.author, reactions)
+    await response.edit(content="", embeds=[view.get_page()], view=view)
 
 
 class MessageReactionsMenu(CommandScrollMenu):

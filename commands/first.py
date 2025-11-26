@@ -13,29 +13,25 @@ aliases = ['first']
 usage = ['rank [@user]', '(MOD) start [#channel] [timezone] [start date]', '(MOD) disable', '(MOD) resync']
 
 
-async def handle(message: discord.Message, args: list=None, c: cmds.Context=None):
-    if not await Permission.check(message, permission, c): raise PermissionError
-
-    # Unlike the other command files, this moves handling to the hybrid group handlers instead of here in this method
-    # I may change the other command files to do the same, but for now they all work fine
+async def handle(message: discord.Message, args: list=None):
     if len(args):
+        context = await Client.get_context(message)
         match args[0]:
             case "rank":
                 try: user = message.mentions[0]
                 except: user = message.author
-                return await _rank(await Client.get_context(message), user)
+                await _rank(context, user)
             case "start":
-                if not await Permission.check(message, Permission.MODERATOR, c): raise PermissionError
                 if not len(args) >= 2: channel = message.channel
                 else:
                     try:
                         channel = message.guild.get_channel_or_thread(int(args[1].removeprefix('<#').removesuffix('>')))
                         if not channel: raise
-                    except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", silent=True, allowed_mentions=none)
+                    except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", allowed_mentions=none, silent=True)
                 args += [None, None, None]
-                return await _start(await Client.get_context(message), channel, args[2], args[3])
-            case "disable": return await _disable(await Client.get_context(message))
-            case "resync": return await _resync(await Client.get_context(message))
+                await _start(context, channel, args[2], args[3])
+            case "disable": await _disable(context)
+            case "resync": await _resync(context)
 
 
 @Client.hybrid_group()

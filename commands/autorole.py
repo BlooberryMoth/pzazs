@@ -1,6 +1,6 @@
 import discord, json
 from discord.ext import commands as cmds
-from Global import CommandScrollMenu, Permission, reply, Client, request_emoji_embed
+from Global import CommandScrollMenu, Permission, Client, none, request_emoji_embed
 
 
 description = """Set up an autorole message for user-acquired server roles."""
@@ -9,17 +9,7 @@ aliases = ['autorole']
 usage = []
 
 
-async def handle(message: discord.Message, args: list=None, ctx: cmds.Context=None):
-    if not await Permission.check(message, permission, ctx): raise PermissionError
-
-    response = await reply("> Loading...", message=message, ctx=ctx)
-
-    try:
-        with open(f'./features/autoroles/{message.guild.id}.json') as file_in: messages = json.load(file_in)
-    except: messages = []
-
-    view = AutoroleMessagesMenu(response, message.author, messages)
-    await response.edit(content="", embeds=[view.get_page()], view=view)
+async def handle(message: discord.Message, *_): await autorole(await Client.get_context(message))
 
 
 @Client.hybrid_command()
@@ -32,8 +22,16 @@ async def autorole(ctx: cmds.Context):
     ctx: cmds.Context
         Context
     """
-    try: await handle(ctx.message, ctx=ctx)
-    except PermissionError: return
+    if not await Permission.check(ctx, permission): raise PermissionError
+
+    response = await ctx.reply("> Loading...", allowed_mentions=none, silent=True)
+
+    try:
+        with open(f'./features/autoroles/{ctx.guild.id}.json') as file_in: messages = json.load(file_in)
+    except: messages = []
+
+    view = AutoroleMessagesMenu(response, ctx.author, messages)
+    await response.edit(content="", embeds=[view.get_page()], view=view)
 
 
 class AutoroleMessagesMenu(CommandScrollMenu):

@@ -10,24 +10,23 @@ usage = ['enable <channel> [minimum_stars]', 'disable']
 
 
 async def handle(message: discord.Message, args: list=None, ctx: cmds.Context=None):
-    if not await Permission.check(message, permission, ctx): raise PermissionError
-
     if len(args):
-        if args[0] == "enable":
-            if not len(args) >= 2: return await message.reply (f"> You need to specify a channel for Stars to be posted to.", silent=True, allowed_mentions=none)
-            else:
+        context = await Client.get_context(message)
+        match args[0]:
+            case "enable":
+                if not len(args) >= 2: return await message.reply (f"> You need to specify a channel for Stars to be posted to.", allowed_mentions=none, silent=True)
                 try:
                     channel = message.guild.get_channel_or_thread(int(args[1].removeprefix('<#').removesuffix('>')))
                     if not channel: raise
-                except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", silent=True, allowed_mentions=none)
-            args += [None]
-            return await _enable(await Client.get_context(message), channel, args[2])
-        
-        if args[0] == "disable": return await _disable(await Client.get_context(message))
+                except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", allowed_mentions=none, silent=True)
+                args += [None]
+                await _enable(context)
+            case "disable": await _disable(context)
 
 
 @Client.hybrid_group()
 async def starboard(ctx: cmds.Context): ...
+
 
 @starboard.command(name="enable")
 async def _enable(ctx: cmds.Context, channel: discord.TextChannel, minimum_stars: int=3) -> None:

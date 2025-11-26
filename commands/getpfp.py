@@ -9,16 +9,10 @@ aliases = ['getpfp', 'pfp']
 usage = ['[@user]']
 
 
-async def handle(message: discord.Message, args: list=None, c: commands.Context=None, user: discord.User=None):
-    if not await Permission.check(message, permission, c): raise PermissionError
-
-    if c:
-        if not user: await c.send(c.author.avatar.url, allowed_mentions=none, silent=True)
-        else: await c.send(user.avatar.url, allowed_mentions=none, silent=True)
-    else:
-        try: user = message.mentions[0]
-        except: user = message.author
-        await message.reply(user.avatar.url, allowed_mentions=none, silent=True)
+async def handle(message: discord.Message, args: list=None):
+    try: user = message.mentions[0]
+    except: user = message.author
+    await getpfp(await Client.get_context(message), user)
 
 
 @Client.hybrid_command()
@@ -33,5 +27,7 @@ async def getpfp(ctx: commands.Context, user: discord.User=None):
     user: discord.User
         User
     """
-    try: await handle(ctx.message, c=ctx, user=user)
-    except PermissionError: return
+    if not await Permission.check(ctx, permission): raise PermissionError
+
+    if not user: user = ctx.author
+    await ctx.reply(user.avatar.url, allowed_mentions=none, silent=True)

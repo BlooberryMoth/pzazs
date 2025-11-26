@@ -11,12 +11,7 @@ aliases = ['ping']
 usage = []
 
 
-async def handle(message: discord.Message, args: list=None, c: commands.Context=None):
-    if not await Permission.check(message, permission, c): raise PermissionError
-    
-    response = f"Pong! Response in {dt.now(tz('UTC')) - message.created_at}"
-    if c: await c.send(response, allowed_mentions=none, silent=True)
-    else: await message.reply(response, allowed_mentions=none, silent=True)
+async def handle(message: discord.Message, args: list=None): await ping(await Client.get_context(message))
 
 
 @Client.hybrid_command()
@@ -29,5 +24,4 @@ async def ping(ctx: commands.Context):
     ctx: cmds.Context
         Context
     """
-    try: await handle(ctx.message, c=ctx)
-    except PermissionError: return
+    await ctx.reply(f"Pong! Response in {dt.now(tz('UTC')) - ctx.message.created_at}", allowed_mentions=none, silent=True)

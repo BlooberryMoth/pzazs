@@ -33,13 +33,10 @@ request_emoji_embed = discord.Embed(color=0x69a9d9,
 
 none = discord.AllowedMentions.none()
 
+
 # Global methods
 
-async def reply(content: str, embeds: list=[], view: discord.ui.View=None, message: discord.Message=None, ctx: commands.Context=None, ephemeral: bool=False) -> discord.Message:
-    if ctx: return await ctx.send(content, embeds=embeds, view=view, allowed_mentions=none, silent=True, ephemeral=ephemeral)
-    else: return await message.reply(content, embeds=embeds, view=view, allowed_mentions=none, silent=True)
-
-
+# I feel this class is pretty self-explanatory
 class Permission:
     DIRECT_MESSAGES = 0
     USER = 1
@@ -47,20 +44,16 @@ class Permission:
     SERVER_OWNER = 3
 
     @staticmethod
-    async def check(message: discord.Message, permission: int=3, ctx: commands.Context=None) -> bool:
-        userPermissionLevel = Permission.DIRECT_MESSAGES
-        if message.guild:
-            userPermissionLevel += 1
-            if message.author.guild_permissions.kick_members: userPermissionLevel += 1
-            if message.author == message.guild.owner: userPermissionLevel += 1
-        if userPermissionLevel >= permission: return True
+    async def check(ctx: commands.Context, permission: int=3) -> bool:
+        user_permission_level = Permission.DIRECT_MESSAGES
+        if ctx.guild:
+            user_permission_level += 1
+            if ctx.author.guild_permissions.kick_members: user_permission_level += 1
+            if ctx.author == ctx.guild.owner: user_permission_level += 1
+        if user_permission_level >= permission: return True
         else:
-            if userPermissionLevel == Permission.DIRECT_MESSAGES:
-                if ctx: await ctx.send("You have to be in a server to use this command.", ephemeral=True)
-                else: await message.reply("You have to be in a server to use this command.", allowed_mentions=none, silent=True)
-            else:
-                if ctx: await ctx.send("You do not have permission to use this command.", ephemeral=True)
-                else: await message.reply("You do not have permission to use this command.", allowed_mentions=none, silent=True)
+            if user_permission_level == Permission.DIRECT_MESSAGES: await ctx.send("You have to be in a server to use this command.", ephemeral=True)
+            else: await ctx.send("You do not have permission to use this command.", ephemeral=True)
             return False
 
     
@@ -78,11 +71,13 @@ class CommandScrollMenu(discord.ui.View):
 
         self.timer.start()
 
+    # This is called on every user interaction
     def interact(self, interaction: discord.Interaction):
         if interaction.user != self.original_author: raise
         self.timer.restart()
 
-    @tasks.loop(seconds=60.0, count=1)
+    # Timer to close command dialogues after one minute
+    @tasks.loop(seconds=60.0, count=1) # Dummy loop that can be reset and fires when 1 minute has passed
     async def timer(self): pass
     @timer.after_loop
     async def on_timeout(self):

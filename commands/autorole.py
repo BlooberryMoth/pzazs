@@ -5,7 +5,7 @@ from Global import CommandScrollMenu, Permission, Client, none, request_emoji_em
 
 description = """Set up an autorole message for user-acquired server roles."""
 permission = Permission.MODERATOR
-aliases = ['autorole']
+aliases = ["autorole"]
 usage = []
 
 

@@ -9,29 +9,30 @@ from Global import Permission, Font, CommandScrollMenu, Client, none
 
 description = """(Moderator Only) Opens menu for controlling the First game. | (All Users) Show rank for you or another user in the First game."""
 permission = Permission.USER
-aliases = ['first']
-usage = ['rank [@user]', '(MOD) start [#channel] [timezone] [start date]', '(MOD) disable', '(MOD) resync']
+aliases = ["first"]
+usage = ["rank [@user]", "start [#channel] [timezone] [start date] (MOD)", "disable (MOD)", "resync (MOD)"]
 
 
 async def handle(message: discord.Message, args: list=None):
-    if len(args):
-        context = await Client.get_context(message)
-        match args[0]:
-            case "rank":
-                try: user = message.mentions[0]
-                except: user = message.author
-                await _rank(context, user)
-            case "start":
-                if not len(args) >= 2: channel = message.channel
-                else:
-                    try:
-                        channel = message.guild.get_channel_or_thread(int(args[1].removeprefix('<#').removesuffix('>')))
-                        if not channel: raise
-                    except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", allowed_mentions=none, silent=True)
-                args += [None, None, None]
-                await _start(context, channel, args[2], args[3])
-            case "disable": await _disable(context)
-            case "resync": await _resync(context)
+    args += [None, None, None]
+    context = await Client.get_context(message)
+    match args[0]:
+        case "rank":
+            try: user = message.mentions[0]
+            except: user = message.author
+            await _rank(context, user)
+        case "start":
+            if not len(args) >= 2: channel = message.channel
+            else:
+                try:
+                    channel = message.guild.get_channel_or_thread(int(args[1].removeprefix('<#').removesuffix('>')))
+                    if not channel: raise
+                except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", allowed_mentions=none, silent=True)
+            args += [None, None, None]
+            await _start(context, channel, args[2], args[3])
+        case "disable": await _disable(context)
+        case "resync": await _resync(context)
+        case _: await message.reply(f"> Unknown sub-command \"{args[0]}\".\n> Correct usage:\n```..first {'\n..first '.join(usage)}```", allowed_mentions=none, silent=True)
 
 
 @Client.hybrid_group()
@@ -50,7 +51,7 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     user: discord.User
         User to see the rank of
     """
-    if not await Permission.check(ctx.message, permission, ctx): return
+    if not await Permission.check(ctx, permission): return
 
     # Error handling
     try:
@@ -87,7 +88,7 @@ async def _start(ctx: cmds.Context,
     start_date: str=None
         'all' | YYYY-mm-dd -|- Starting date used to gather messages if you've already played before. Defaults to midnight, today.
     """
-    if not await Permission.check(ctx.message, Permission.MODERATOR, ctx): return
+    if not await Permission.check(ctx, Permission.MODERATOR): return
     if not channel:  channel  = ctx.channel
     if not timezone: timezone = "UTC"
     else:
@@ -121,7 +122,7 @@ async def _disable(ctx: cmds.Context):
     ctx: cmds.Context
         Context
     """
-    if not await Permission.check(ctx.message, Permission.MODERATOR, ctx): return
+    if not await Permission.check(ctx, Permission.MODERATOR): return
     if not os.path.exists(f'./features/games/first/{ctx.guild.id}.json'): return await ctx.send("> The First game isn't even enabled here!", ephemeral=True)
 
     os.remove(f'./features/games/first/{ctx.guild.id}.json')
@@ -138,7 +139,7 @@ async def _resync(ctx: cmds.Context):
     ctx: cmds.Context
         Context
     """
-    if not await Permission.check(ctx.message, Permission.MODERATOR, ctx): return
+    if not await Permission.check(ctx, Permission.MODERATOR): return
 
     try:
         with open(f'./features/games/first/{ctx.guild.id}.json') as file_in: game = json.load(file_in)

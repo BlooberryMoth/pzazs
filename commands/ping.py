@@ -7,7 +7,7 @@ from Global import Permission, Client, none
 
 description = """Checks the latency between the bot and Discord."""
 permission = Permission.DIRECT_MESSAGES
-aliases = ['ping']
+aliases = ["ping"]
 usage = []
 
 

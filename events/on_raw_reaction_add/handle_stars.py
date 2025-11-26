@@ -23,7 +23,7 @@ async def handle(ctx: discord.RawReactionActionEvent):
         if not channel: return await message.reply(f"Unable to find/access the Starboard channel!", allowed_mentions=none, silent=True)
 
         i = 0
-        embeds = [discord.Embed(color=0xffac33, url="https://pzazs.thatgalblu.com", description="test") for _ in range(4)]
+        embeds = [discord.Embed(color=0xffac33, url="https://pzazs.thatgalblu.com", description="_") for _ in range(4)]
         embeds[0].description = f"[Jump to message ;](<{message.jump_url}>)"
         embeds[0].timestamp =  dt.now()
         embeds[0].set_author(name=message.author.name, icon_url=message.author.avatar.url or "https://pzazs.thatgalblu.com/api/res/images/404.png")

@@ -7,17 +7,17 @@ from Logging import LOG
 # Global variables, imports, and methods
 
 try:
-    with open("./token.txt") as token: token = fr'{token.read()}'
+    with open('./token.txt') as TOKEN: TOKEN = fr"{TOKEN.read()}"
 except Exception as e: raise Exception(f"Unable to load token from \"token.txt\": {e}") from e
 try:
-    with open("./oauth-secret.txt") as secret: secret = fr'{secret.read()}'
+    with open('./oauth-secret.txt') as SECRET: SECRET = fr"{SECRET.read()}"
 except Exception as e:
-    secret = None
+    SECRET = None
     LOG.error(f"Unable to load secret from \"oauth-secret.txt\": {e}")
 
 # Global variables
 
-PREFIX = '..'
+PREFIX = ".."
 activityText = fr"in dev mode"
 intents  = discord.Intents.default(); intents.members = intents.message_content = True
 activity = discord.Activity(name=activityText, type=discord.ActivityType.playing)
@@ -88,5 +88,5 @@ class CommandScrollMenu(discord.ui.View):
 
 class Font:
     white = (255,255,255)
-    dm_sans_24 = ImageFont.truetype("./features/resources/fonts/DM Sans Black.ttf", size=24/3*4)
-    gg_sans_14 = ImageFont.truetype("./features/resources/fonts/GG Sans Normal.ttf", size=14/3*4)
+    dm_sans_24 = ImageFont.truetype('./features/resources/fonts/DM Sans Black.ttf', size=24/3*4)
+    gg_sans_14 = ImageFont.truetype('./features/resources/fonts/GG Sans Normal.ttf', size=14/3*4)

@@ -5,7 +5,7 @@ from Global import CommandScrollMenu, Permission, Client, none, request_emoji_em
 
 description = """Adds an emoji reaction to a message that you send."""
 permission = Permission.DIRECT_MESSAGES
-aliases = ['reactions', 'reacts']
+aliases = ["reactions", "reacts"]
 usage = []
 
 
@@ -22,8 +22,6 @@ async def reactions(ctx: commands.Context):
     ctx: cmds.Context
         Context
     """
-    if not await Permission.check(ctx, permission): raise PermissionError
-
     response = await ctx.reply("> Loading...", allowed_mentions=none, silent=True)
 
     try:

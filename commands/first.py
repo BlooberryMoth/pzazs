@@ -56,9 +56,9 @@ async def _rank(ctx: cmds.Context, user: discord.User=None):
     try:
         with open(f"./features/games/first/{ctx.guild.id}.json") as file_in: game = json.load(file_in)
     except: return await ctx.reply("> The First game isn't even enabled here!", ephemeral=True)
-    if user and str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id}> hasn't place in this server's First game!", silent=True, allowed_mentions=none)
+    if user and str(user.id) not in game['statistics']: return await ctx.reply(f"<@{user.id}> hasn't place in this server's First game!", allowed_mentions=none, silent=True)
 
-    response = await ctx.reply("> Loading...", silent=True, allowed_mentions=none) # Technically, I could use 'ctx.defer()', but I prefer this.
+    response = await ctx.reply("> Loading...", allowed_mentions=none, silent=True) # Technically, I could use 'ctx.defer()', but I prefer this.
 
     # Sort the game statistics and put them into the CommandScrollMenu from 'Global.py' as the items
     sorted_stats = dict(sorted(game['statistics'].items(), key=lambda x: (x[1]['wins'], x[1]['totalPoints']), reverse=True))

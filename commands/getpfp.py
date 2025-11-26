@@ -9,7 +9,7 @@ aliases = ['getpfp', 'pfp']
 usage = ['[@user]']
 
 
-async def handle(message: discord.Message, args: list=None):
+async def handle(message: discord.Message, *_):
     try: user = message.mentions[0]
     except: user = message.author
     await getpfp(await Client.get_context(message), user)

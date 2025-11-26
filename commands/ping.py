@@ -11,7 +11,7 @@ aliases = ['ping']
 usage = []
 
 
-async def handle(message: discord.Message, args: list=None): await ping(await Client.get_context(message))
+async def handle(message: discord.Message, *_): await ping(await Client.get_context(message))
 
 
 @Client.hybrid_command()

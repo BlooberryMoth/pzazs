@@ -9,7 +9,7 @@ aliases = ['reactions', 'reacts']
 usage = []
 
 
-async def handle(message: discord.Message, args: list=None, ctx: commands.Context=None): await reactions(await Client.get_context(message))
+async def handle(message: discord.Message, *_): await reactions(await Client.get_context(message))
 
 
 @Client.hybrid_command()

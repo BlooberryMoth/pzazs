@@ -9,7 +9,7 @@ aliases = ['starboard']
 usage = ['enable <channel> [minimum_stars]', 'disable']
 
 
-async def handle(message: discord.Message, args: list=None, ctx: cmds.Context=None):
+async def handle(message: discord.Message, args: list=None):
     if len(args):
         context = await Client.get_context(message)
         match args[0]:

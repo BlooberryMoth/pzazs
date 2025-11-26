@@ -8,9 +8,15 @@ async def handle(message: discord.Message):
     with open(f'./features/reactions/{author.id}.json') as file_in: reactions = json.load(file_in)
 
     for react in reactions:
-        if True in [_ in message.content.lower() for _ in react['message']['contains']] \
-        and not True in [_ in message.content.lower() for _ in react['message']['excludes']] \
-        or message.content.lower() in react['message']['isExactly']:
+        if (
+            message.guild.id in react['requirements']['guilds'] \
+            or not len(react['requirements']['guilds'])
+        ) \
+        and (
+            True in         [_ in message.content.lower() for _ in react['requirements']['message']['contains']]
+            and not True in [_ in message.content.lower() for _ in react['requirements']['message']['excludes']]
+            or message.content.lower() in react['requirements']['message']['isExactly']
+        ):
             try:
                 emoji = Client.get_emoji(react['emojiID'])
                 emoji.id

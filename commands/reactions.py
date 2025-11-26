@@ -29,7 +29,7 @@ async def reactions(ctx: commands.Context):
     except: reactions = []
 
     view = MessageReactionsMenu(response, ctx.author, reactions)
-    await response.edit(content="", embeds=[view.get_page()], view=view)
+    await response.edit(content="", embeds=[view.get_page()], view=view, allowed_mentions=none)
 
 
 class MessageReactionsMenu(CommandScrollMenu):
@@ -78,13 +78,12 @@ class MessageReactionsMenu(CommandScrollMenu):
             "emoji": None,
             "emojiID": None,
             "requirements": {
-                "serverID": None,
-                "channelID": None
-            },
-            "message": {
-                "contains": [],
-                "excludes": [],
-                "isExactly": []
+                "guilds": [],
+                "message": {
+                    "contains": [],
+                    "excludes": [],
+                    "isExactly": []
+                }
             }
         }
         try: newReaction['emojiID'] = reaction.emoji.id
@@ -118,11 +117,12 @@ class MessageReactionsMenu(CommandScrollMenu):
         embed.set_author(name=f"{self.original_author}'s reactions", icon_url=self.original_author.avatar.url)
         embed.set_footer(text="Closing prompt in 60s")
         if len(self.items):
-            requirements = self.items[self.position]['message']
+            requirements = self.items[self.position]['requirements']
 
-            contains  = ('"' + '\" \"'.join(requirements['contains']) + '"') if len(requirements['contains']) else ""
-            excludes  = ('"' + '\" \"'.join(requirements['excludes']) + '"') if len(requirements['excludes']) else ""
-            isExactly = ('"' + '\" \"'.join(requirements['isExactly']) + '"') if len(requirements['isExactly']) else ""
+            contains  = ('"' + '\", \"'.join(requirements['message']['contains'])  + '"') if len(requirements['message']['contains'])  else ""
+            excludes  = ('"' + '\", \"'.join(requirements['message']['excludes'])  + '"') if len(requirements['message']['excludes'])  else ""
+            isExactly = ('"' + '\", \"'.join(requirements['message']['isExactly']) + '"') if len(requirements['message']['isExactly']) else ""
+            guilds    = ('"' + '\", \"'.join([guild.name for guild in self.original_author.mutual_guilds if guild.id in requirements['guilds']]) + '"') if len(requirements['guilds']) else "All servers"
 
             try:
                 emoji = Client.get_emoji(self.items[self.position]['emojiID'])
@@ -139,9 +139,10 @@ class MessageReactionsMenu(CommandScrollMenu):
                 embed.add_field(name="From:", value="Unicode Consortium")
 
             embed.add_field(name="Will add reaction if the message", value="", inline=False)
-            embed.add_field(name="Contains:",              value=contains,  inline=False)
-            embed.add_field(name="And, does not contain:", value=excludes,  inline=False)
-            embed.add_field(name="Or, is exactly:",        value=isExactly, inline=False)
+            embed.add_field(name="Contains:",                 value=contains,  inline=False)
+            embed.add_field(name="And, does not contain:",    value=excludes,  inline=False)
+            embed.add_field(name="Or, is exactly:",           value=isExactly, inline=False)
+            embed.add_field(name="And, is in the server(s):", value=guilds,    inline=False)
 
             return embed
         else:
@@ -157,19 +158,37 @@ class RequirementsModal(discord.ui.Modal):
 
         self.view = view
 
-        requirements = self.view.items[self.view.position]['message']
-        contains  = ('"' + '\" \"'.join(requirements['contains']) + '"') if len(requirements['contains']) else ""
-        excludes  = ('"' + '\" \"'.join(requirements['excludes']) + '"') if len(requirements['excludes']) else ""
-        isExactly = ('"' + '\" \"'.join(requirements['isExactly']) + '"') if len(requirements['isExactly']) else ""
+        requirements = self.view.items[self.view.position]['requirements']
+        contains  = ('"' + '\" \"'.join(requirements['message']['contains'])  + '"') if len(requirements['message']['contains'])  else ""
+        excludes  = ('"' + '\" \"'.join(requirements['message']['excludes'])  + '"') if len(requirements['message']['excludes'])  else ""
+        isExactly = ('"' + '\" \"'.join(requirements['message']['isExactly']) + '"') if len(requirements['message']['isExactly']) else ""
+        guilds  = self.view.items[self.view.position]['requirements']['guilds']
 
         self.add_item(discord.ui.TextInput(label="Message contains:",   placeholder="Format: \"text 1\" \"text 2\"", default=contains,  required=False))
         self.add_item(discord.ui.TextInput(label="Message excludes:",   placeholder="Format: \"text 1\" \"text 2\"", default=excludes,  required=False))
         self.add_item(discord.ui.TextInput(label="Message is exactly:", placeholder="Format: \"text 1\" \"text 2\"", default=isExactly, required=False))
+        self.add_item(discord.ui.Label(
+            text="Which servers:",
+            component=discord.ui.Select(
+                placeholder="Select servers...",
+                min_values=1,
+                max_values=len(view.original_author.mutual_guilds),
+                options=[
+                    discord.SelectOption(
+                        label=guild.name,
+                        value=str(guild.id),
+                        default=guild.id in guilds)
+                    for guild in view.original_author.mutual_guilds
+                ],
+                required=False
+            )
+        ))
 
     async def on_submit(self, interaction: discord.Interaction):
-        self.view.items[self.view.position]['message']['contains'] = [snip.replace('"', "") for snip in self.children[0].value.split('" "')] if len(self.children[0].value) else []
-        self.view.items[self.view.position]['message']['excludes'] = [snip.replace('"', "") for snip in self.children[1].value.split('" "')] if len(self.children[1].value) else []
-        self.view.items[self.view.position]['message']['isExactly'] = [snip.replace('"', "") for snip in self.children[2].value.split('" "')] if len(self.children[2].value) else []
+        self.view.items[self.view.position]['requirements']['message']['contains']  = [snip.replace('"', "") for snip in self.children[0].value.split('" "')] if len(self.children[0].value) else []
+        self.view.items[self.view.position]['requirements']['message']['excludes']  = [snip.replace('"', "") for snip in self.children[1].value.split('" "')] if len(self.children[1].value) else []
+        self.view.items[self.view.position]['requirements']['message']['isExactly'] = [snip.replace('"', "") for snip in self.children[2].value.split('" "')] if len(self.children[2].value) else []
+        self.view.items[self.view.position]['requirements']['guilds'] = [int(guild_ID) for guild_ID in self.children[3].component.values]
 
         with open(f'./features/reactions/{interaction.user.id}.json', 'w') as file_out: file_out.write(json.dumps(self.view.items, indent=4))
 

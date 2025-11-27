@@ -14,13 +14,16 @@ async def handle(message: discord.Message, args: list=None):
     context = await Client.get_context(message)
     match args[0]:
         case "enable":
-            if not len(args) >= 2: return await message.reply (f"> You need to specify a channel for Stars to be posted to.", allowed_mentions=none, silent=True)
+            if not args[1]: return await message.reply (f"> You need to specify a channel for Stars to be posted to.", allowed_mentions=none, silent=True)
             try:
                 channel = message.guild.get_channel_or_thread(int(args[1].removeprefix('<#').removesuffix('>')))
                 if not channel: raise
             except: return await message.reply(f"> Unable to parse channel from \"{args[1]}\".", allowed_mentions=none, silent=True)
-            args += [None]
-            await _enable(context)
+            if args[2]:
+                try: minimum_stars = int(args[2])
+                except: return await message.reply(f"> Unable to parse minimum star count from \"{args[2]}\".", allowed_mentions=none, silent=True)
+            else: minimum_stars = 3
+            await _enable(context, channel, minimum_stars)
         case "disable": await _disable(context)
         case _: await message.reply(f"> Unknown sub-command \"{args[0]}\".\n> Correct usage:\n```{PREFIX}{aliases[0]} {f'\n{PREFIX}{aliases[0]} '.join(usage)}```", allowed_mentions=none, silent=True)
 

@@ -3,9 +3,9 @@ from discord.ext import commands as cmds
 from Global import CommandScrollMenu, Permission, Client, none, request_emoji_embed
 
 
-description = """Set up an autorole message for user-acquired server roles."""
+description = """(Moderator Only) Set up an autorole message for user-acquired server roles."""
 permission = Permission.MODERATOR
-aliases = ["autorole"]
+aliases = ["autorole (MOD)"]
 usage = []
 
 

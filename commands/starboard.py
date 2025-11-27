@@ -6,7 +6,7 @@ from Global import Permission, PREFIX, Client, none
 description = """(Moderator Only) Enables or disables the Starboard."""
 permission = Permission.MODERATOR
 aliases = ["starboard"]
-usage = ["enable <channel> [minimum_stars]", "disable"]
+usage = ["enable <channel> [minimum_stars] (MOD)", "disable (MOD)"]
 
 
 async def handle(message: discord.Message, args: list=None):

@@ -26,21 +26,20 @@ Multiple gifs: (competition also did not attempt to "star" this message)
 ## Message reactions!
 Ever wanted automated reactions to your messages? Well now you can have them!<br>
 Using `/reactions` opens up a dialogue that allows you to set up to 10 emojis to be automatically added to your messages.<br>
-You can choose what emojis react to what messages and even set it to only react in certain servers or channels.<br>
+You can choose what emojis react to what messages and even set it to only react in certain servers.<br>
 If you're a server owner and think this could be abused, you can turn off the "Add Reactions" permission on the Bot's role.<br><br>
 
-## Auto user roles!
+## Automatic user roles!
 Another classic feature that allows users to give themselves roles by reacting to a message.<br>
-Simply use `/autorole` and a dialogue will open that will allow you to make up to 10 different "auto role" messages, with up to 10 roles per message.<br>
-<sub>Note: The maximum of 10 isn't hard-set. If enough people want I can change it to be any number.</sub><br><br>
+Simply use `/autorole` and a dialogue will open that will allow you to make up to 25 different "auto role" messages, with up to 25 roles per message.<br>
 
 ## Games!
 That's right, folks: the original reason I made this.<br>
 So far there's only one game, First, but I plan on adding more as time goes on. I don't have any plans of future games, but I plan on planning future games :P<br>
 
 ### First:
-To play, simply run the command `/first start [channel] [timezone] [start_date]`, and every day at midnight say "first" to win!<br>
-Score is kept track and resets at the beginning of every month, and the player with the highest score will "win" that month.<br>
+If you want your server to play, just run the command `/first start [channel] [timezone] [start_date]`, and every day at midnight say "first" to win!<br>
+Score is kept track and resets at the beginning of every month, and the player with the highest score will "win" that previous month.<br>
 Rank is decided by who has the most wins, and then who has the most points that month. (So someone with 1 point but 3 wins will be higher rank than someone with 15 points and 1 win)<br><br>
 
 As far as I'm aware, the code works with multiple people trying to say "first" first, and I haven't seen any issues with it keeping track of what messages are sent in what order.<br>

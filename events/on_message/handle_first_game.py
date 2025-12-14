@@ -37,6 +37,6 @@ async def handle(message: discord.Message):
     game['statistics'][str(message.author.id)] = user
 
     midnight = dt.now(tz(game['timezone'])).replace(hour=0, minute=0, second=0, microsecond=0)
-    await message.reply(f"And today's winner... <@{message.author.id}>!! (exactly {today - midnight} after midnight).", allowed_mentions=none)
+    await message.reply(f"And today's winner... <@{message.author.id}>!! (exactly {today - midnight} after midnight)", allowed_mentions=none)
 
     with open(f'./features/games/first/{message.guild.id}.json', 'w') as file_out: file_out.write(json.dumps(game, indent=4))

@@ -280,7 +280,7 @@ class FirstLeaderboardMenu(CommandScrollMenu):
         self.button_nxt.disabled = self.position >= len(self.items)
 
     async def get_page(self) -> discord.File:
-        if not self.position: return self.get_leaderboard_card()
+        if not self.position: return await self.get_leaderboard_card()
 
 
         user_id = self.items[self.position - 1]

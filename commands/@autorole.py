@@ -1,6 +1,7 @@
 import discord, json
 from discord.ext import commands as cmds
-from Global import CommandScrollMenu, Permission, Client, none, request_emoji_embed
+from Global import CommandScrollMenu, Client, none, request_emoji_embed
+from commands import Permission
 
 
 description = """(Moderator Only) Set up an autorole message for user-acquired server roles."""

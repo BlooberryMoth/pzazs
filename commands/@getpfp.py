@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
-from Global import Permission, Client, none
+from Global import Client, none
+from commands import Permission
 
 
 description = """Gets info about user. Defaults to you if no one is specified"""

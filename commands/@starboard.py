@@ -1,6 +1,7 @@
 import discord, json, os
 from discord.ext import commands as cmds
-from Global import Permission, PREFIX, Client, none
+from Global import PREFIX, Client, none
+from commands import Permission
 
 
 description = """(Moderator Only) Enables or disables the Starboard."""

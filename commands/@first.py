@@ -4,7 +4,8 @@ from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pytz import timezone as tz
 from PIL import Image, ImageDraw
-from Global import Permission, Font, CommandScrollMenu, Client, none
+from Global import Font, CommandScrollMenu, Client, none
+from commands import Permission
 
 
 description = """(Moderator Only) Opens menu for controlling the First game. | (All Users) Show rank for you or another user in the First game."""

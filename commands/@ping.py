@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 from datetime import datetime as dt
 from pytz import timezone as tz
-from Global import Permission, Client, none
+from Global import Client, none
+from commands import Permission
 
 
 description = """Checks the latency between the bot and Discord."""

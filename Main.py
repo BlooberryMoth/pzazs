@@ -12,7 +12,7 @@ if __name__== "__main__":
     # This allows all the command and event files to be seperated from Main.py/Global.py for extreme levels of abstraction. 
     if not os.path.exists('./commands'): os.mkdir("./commands")
     for file in os.listdir('./commands'):
-        if file.endswith('.py'):
+        if file.startswith('@') and file.endswith('.py'):
             file = file.split('.py')[0]
             module = importlib.import_module(f'commands.{file}')
             command_aliases[file] = { "aliases": module.aliases, "module": module }
@@ -21,7 +21,7 @@ if __name__== "__main__":
     if not os.path.exists('./events'): os.mkdir("./events")
     for folder in os.listdir('./events'):
         for file in os.listdir(f'./events/{folder}'):
-            if file.startswith('@') and file.endswith('py'): module = importlib.import_module(f'events.{folder}.{file.removesuffix(".py")}')
+            if file.startswith('@') and file.endswith('.py'): module = importlib.import_module(f'events.{folder}.{file.removesuffix(".py")}')
     LOG.info("Loaded events.")
 
     if not os.path.exists('./features'):             os.mkdir("./features")
